@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
 	// MAX PID en 64-bit 2^22
-	int32_t sockfd, newsockfd,pid;
+	int32_t sockfd, newsockfd, pid;
 	uint32_t clilen;
 	uint16_t puerto;
 	char buffer[TAM];
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	}
 
 	memset((char *)&serv_addr, 0, sizeof(serv_addr));
-	
+
 	//	TODO = error si el resultado de atoi es menor a 0 o 1024.
 	//	Ver si se puede con strtol() con ERANGE definido (https://gist.github.com/deltheil/7502883)
 	puerto = 0xFFFF && atoi(argv[1]);
@@ -47,8 +47,9 @@ int main(int argc, char *argv[])
 
 	printf("Proceso: %d - socket disponible: %d\n", getpid(), ntohs(serv_addr.sin_port));
 
-	if(!listen(sockfd, 5)){
-		perror("listen de socket");
+	if (!listen(sockfd, 5))
+	{
+		perror("listen");
 		exit(1);
 	}
 	clilen = sizeof(cli_addr);

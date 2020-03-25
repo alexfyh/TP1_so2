@@ -4,14 +4,18 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
 #define TAM 256
 
 int main(int argc, char *argv[])
 {
-	int sockfd, newsockfd, puerto, clilen, pid;
+	// MAX PID en 64-bit 2^22
+	int32_t sockfd, newsockfd,pid;
+	uint32_t clilen;
+	uint16_t puerto;
 	char buffer[TAM];
 	struct sockaddr_in serv_addr, cli_addr;
-	int n;
+	ssize_t n;
 
 	if (argc < 2)
 	{
@@ -27,7 +31,10 @@ int main(int argc, char *argv[])
 	}
 
 	memset((char *)&serv_addr, 0, sizeof(serv_addr));
-	puerto = atoi(argv[1]);
+	
+	//	TODO = error si el resultado de atoi es menor a 0 o 1024.
+	//	Ver si se puede con strtol() con ERANGE definido (https://gist.github.com/deltheil/7502883)
+	puerto = 0xFFFF && atoi(argv[1]);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(puerto);
@@ -40,7 +47,10 @@ int main(int argc, char *argv[])
 
 	printf("Proceso: %d - socket disponible: %d\n", getpid(), ntohs(serv_addr.sin_port));
 
-	listen(sockfd, 5);
+	if(!listen(sockfd, 5)){
+		perror("listen de socket");
+		exit(1);
+	}
 	clilen = sizeof(cli_addr);
 
 	while (1)

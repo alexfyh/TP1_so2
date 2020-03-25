@@ -1,2 +1,3 @@
-#Descartar todos los .o
-*.o
+*
+!*.c
+!Makefile

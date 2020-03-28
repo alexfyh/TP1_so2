@@ -17,6 +17,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_in serv_addr, cli_addr;
 	ssize_t n;
 
+	//	Constante maximo cantidad intentos
+	const uint8_t maxTry = 3;
 	if (argc < 2)
 	{
 		fprintf(stderr, "Uso: %s <puerto>\n", argv[0]);

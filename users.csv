@@ -1,2 +1,6 @@
-alexyh,alexyh_password
-franz,franz_password
+User,password,enabled
+alexyh1,alexyh_password1,1
+alexyh22,alexyh_password2,0
+alexyh333,alexyh_password3,1
+alexyh4444,alexyh_password4,0
+alexyh55555,alexyh_password5,1

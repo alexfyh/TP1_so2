@@ -5,9 +5,6 @@
 #include <stdbool.h>
 
 #define users_db "users.csv"
-#define USER_COLUMN 0
-#define PASSWORD_COLUMN 1
-#define ENABLED_COLUMN 2
 
 bool isAuthorized(char *user, char *password)
 {
@@ -19,23 +16,39 @@ bool isAuthorized(char *user, char *password)
         exit(1);
     }
     char line[1024];
-
     while (fgets(line, 1024, fp))
     {
-        if(line[strlen(line)-1]=='\n'){
-            line[strlen(line)-1]='\0';
+        if (line[strlen(line) - 1] == '\n')
+        {
+            line[strlen(line) - 1] = '\0';
         }
         //  TODO = ver ese aviso de que modifica el primer argumento STRTOK
-        char * campo = strtok(line,",");
+        //  strdup
+        char *user_field = strtok(line, ",");
+        //  TODO = Ver cuando retorno de strtok es NULL
+        if (strlen(user_field) == strlen(user) && !(strncmp(user_field, user, strlen(user_field))))
+        {
+            char * password_field = strtok(NULL,",");
+            if (strlen(password_field) == strlen(password) && !(strncmp(password_field, password, strlen(password_field))))
+            {
+                return true;
+            }
+            else
+            {
+                break;
+            }
+        }
+        /*
         while (campo!=NULL)
         {
             printf("Campo = %s  ---- ",campo);
             campo = strtok(NULL,",");
-        } 
-        printf("\n");
+        }
+        */
     }
     fclose(fp);
-    return true;
+
+    return false;
 }
 
 void setUnauthorized(char *user)
@@ -61,4 +74,5 @@ const char* getfield(char* line, int num)
 Limitaciones de la DB:
 Una fila puede tener máximo de 1023 caracteres
 Si un nombre de usuario se repite, sólo tomará en cuenta el primero encontrado
+Los campos no pueden ser vacíos (,,)
 */

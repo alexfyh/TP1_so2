@@ -19,20 +19,8 @@ const char* getfield(char* line, int num)
 
 int main(int argc, char *argv[]){
 
-    bool resultado = isAuthorized("Hola","Chau");
+    bool resultado = isAuthorized(argv[1],argv[2]);
 
+    printf("Resultado %d\n",resultado);
     return 0;
-
-    //printf("Resultado %d\n",resultado);
-    /*
-    FILE* stream = fopen("users.csv", "r");
-    char line[1024];
-    while (fgets(line, 1024, stream))
-    {
-        char* tmp = strdup(line);
-        printf("Field  would be %s\n", getfield(tmp, 1));
-        // NOTE strtok clobbers tmp
-        free(tmp);
-    }
-    */
 }

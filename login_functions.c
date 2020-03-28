@@ -5,9 +5,16 @@
 #include <stdbool.h>
 
 #define users_db "users.csv"
+#define FIELD_LENGTH 25
+#define LINE_LENGTH 100
 
 bool isAuthorized(char *user, char *password)
 {
+    if (user == NULL || password == NULL)
+    {
+        perror("Usuario y/o password no puede ser NULL");
+        return false;
+    }
     //https://stackoverflow.com/questions/12911299/read-csv-file-in-c
     FILE *fp = fopen(users_db, "r");
     if (!fp)
@@ -15,9 +22,10 @@ bool isAuthorized(char *user, char *password)
         perror(users_db);
         exit(1);
     }
-    char line[1024];
-    while (fgets(line, 1024, fp))
+    char line[LINE_LENGTH];
+    while (fgets(line, LINE_LENGTH, fp))
     {
+        //  TODO = ver strnlen_s y C11, o strnlen
         if (line[strlen(line) - 1] == '\n')
         {
             line[strlen(line) - 1] = '\0';
@@ -25,11 +33,19 @@ bool isAuthorized(char *user, char *password)
         //  TODO = ver ese aviso de que modifica el primer argumento STRTOK
         //  strdup
         char *user_field = strtok(line, ",");
-        //  TODO = Ver cuando retorno de strtok es NULL
-        if (strlen(user_field) == strlen(user) && !(strncmp(user_field, user, strlen(user_field))))
+        if (user_field == NULL)
         {
-            char * password_field = strtok(NULL,",");
-            if (strlen(password_field) == strlen(password) && !(strncmp(password_field, password, strlen(password_field))))
+            continue;
+        }
+        //  TODO = Ver cuando retorno de strtok es NULL
+        if (strnlen(user_field,FIELD_LENGTH) == strnlen(user,FIELD_LENGTH) && !(strncmp(user_field, user, strnlen(user_field,FIELD_LENGTH))))
+        {
+            char *password_field = strtok(NULL, ",");
+            if (user_field == NULL)
+            {
+                return false;
+            }
+            if (strnlen(password_field,FIELD_LENGTH) == strnlen(password,FIELD_LENGTH) && !(strncmp(password_field, password, strnlen(password_field,FIELD_LENGTH))))
             {
                 return true;
             }
@@ -38,13 +54,6 @@ bool isAuthorized(char *user, char *password)
                 break;
             }
         }
-        /*
-        while (campo!=NULL)
-        {
-            printf("Campo = %s  ---- ",campo);
-            campo = strtok(NULL,",");
-        }
-        */
     }
     fclose(fp);
 
@@ -55,24 +64,16 @@ void setUnauthorized(char *user)
 {
     return;
 }
-/*
-const char* getfield(char* line, int num)
-{
-    const char* tok;
-    for (tok = strtok(line, ";");
-            tok && *tok;
-            tok = strtok(NULL, ";\n"))
-    {
-        if (!--num)
-            return tok;
-    }
-    return NULL;
-}
-*/
 
 /*
 Limitaciones de la DB:
 Una fila puede tener máximo de 1023 caracteres
 Si un nombre de usuario se repite, sólo tomará en cuenta el primero encontrado
-Los campos no pueden ser vacíos (,,)
+Los campos no pueden ser vacíos (,,), sí soporta espacios en blanco
+
+Si le pongo la restriccion de cierto tamaño con la funcion
+strnlen, puedo evitar overflow del buffer.
+
+
+Si algún campo tiene más de 19 caracteres,se da en la pera las comprobaciones de login
 */

@@ -22,8 +22,7 @@ int main( int argc, char *argv[] ) {
 		fprintf( stderr, "Uso %s host puerto\n", argv[0]);
 		exit( 0 );
 	}
-
-	puerto = 0xFFFF && atoi( argv[2] );
+	puerto = (uint16_t)((unsigned int)atoi(argv[2]));
 	sockfd = socket( AF_INET, SOCK_STREAM, 0 );
 	if ( sockfd < 0 ) {
 		perror( "ERROR apertura de socket" );

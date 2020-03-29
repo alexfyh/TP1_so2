@@ -7,7 +7,7 @@
 #include <unistd.h>
 #define TAM 256
 #define MAX_CONNECTION 5
-#define MAX_TRY	3
+#define MAX_TRY 3
 
 int main(int argc, char *argv[])
 {
@@ -70,6 +70,46 @@ int main(int argc, char *argv[])
 			close(sockfd);
 			while (1)
 			{
+				char user_input[TAM];
+				char password_input[TAM];
+				{
+					memset(buffer, '\0', TAM);
+					n = write(newsockfd, "login:", TAM - 1);
+					if (n < 0)
+					{
+						perror("escritura de socket");
+						exit(1);
+					}
+					n = read(newsockfd, buffer, TAM - 1);
+					if (n < 0)
+					{
+						perror("lectura de socket");
+						exit(1);
+					}
+					strncpy(user_input, buffer, TAM - 1);
+				}
+
+				{
+					memset(buffer, '\0', TAM);
+					n = write(newsockfd, "password:", strnlen("password:", TAM - 1));
+					if (n < 0)
+					{
+						perror("escritura de socket");
+						exit(1);
+					}
+					n = read(newsockfd, buffer, TAM - 1);
+					if (n < 0)
+					{
+						perror("lectura de socket");
+						exit(1);
+					}
+					strncpy(password_input, buffer, TAM - 1);
+				}
+
+				printf("Usuario: %s \nPassword: %s", user_input, password_input);
+				exit(0);
+
+				/*
 				memset(buffer, 0, TAM);
 				n = read(newsockfd, buffer, TAM - 1);
 				if (n < 0)
@@ -92,6 +132,7 @@ int main(int argc, char *argv[])
 					printf("PROCESO %d. Como recibí 'fin', termino la ejecución.\n\n", getpid());
 					exit(0);
 				}
+				*/
 			}
 		}
 		else

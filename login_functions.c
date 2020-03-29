@@ -58,11 +58,12 @@ bool isAuthorized(char *user, char *password)
     }
     return false;
 }
-
+/*
 void setUnauthorized(char *user)
 {
     return;
 }
+*/
 
 /*
 Limitaciones de la DB:

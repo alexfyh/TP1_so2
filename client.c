@@ -6,20 +6,20 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
-#define TAM 256
+#include "buffer_functions.h"
+#define BUFFER_SIZE 256
 
 int main(int argc, char *argv[])
 {
 	int sockfd;
-	ssize_t n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	
+
 	//int terminar = 0;
 
 	uint16_t puerto;
 
-	char buffer[TAM];
+	char buffer[BUFFER_SIZE];
 	if (argc < 3)
 	{
 		fprintf(stderr, "Uso %s host puerto\n", argv[0]);
@@ -51,73 +51,17 @@ int main(int argc, char *argv[])
 
 	while (1)
 	{
-		//memset(buffer, 0, TAM);
-		{
-			n = read(sockfd, buffer, TAM - 1);
-			if (n < 0)
-			{
-				perror("lectura de socket");
-				exit(1);
-			}
-			printf("%s", buffer);
-			memset(buffer, '\0', TAM);
-			fgets(buffer, TAM - 1, stdin);
-			n = write(sockfd, buffer, TAM - 1);
-			if (n < 0)
-			{
-				perror("escritura de socket");
-				exit(1);
-			}
-		}
-
-		{
-			n = read(sockfd, buffer, TAM - 1);
-			if (n < 0)
-			{
-				perror("lectura de socket");
-				exit(1);
-			}
-			printf("%s", buffer);
-			memset(buffer, '\0', TAM);
-			fgets(buffer, TAM - 1, stdin);
-			n = write(sockfd, buffer, TAM - 1);
-			if (n < 0)
-			{
-				perror("escritura de socket");
-				exit(1);
-			}
-		}
-
+		read_buffer(sockfd, buffer);
+		//	TODO = ponele voluntad, la ctm
+		printf("%s",buffer);
+		write_buffer(sockfd, NULL, buffer);
+		
+		//strncpy(user_input, buffer, BUFFER_SIZE - 1);
+		read_buffer(sockfd, buffer);
+		printf("%s",buffer);
+		write_buffer(sockfd, NULL, buffer);
+		//strncpy(password_input, buffer, BUFFER_SIZE - 1);
 		exit(0);
-		/*
-		printf( "Ingrese el mensaje a transmitir: " );
-		memset( buffer, '\0', TAM );
-		fgets( buffer, TAM-1, stdin );
-
-		n = write( sockfd, buffer, strlen(buffer) );
-		if ( n < 0 ) {
-			perror( "escritura de socket" );
-			exit( 1 );
-		}
-
-		// Verificando si se escribió: fin
-		buffer[strlen(buffer)-1] = '\0';
-		if( !strcmp( "fin", buffer ) ) {
-			terminar = 1;
-		}
-
-		memset( buffer, '\0', TAM );
-		n = read( sockfd, buffer, TAM );
-		if ( n < 0 ) {
-			perror( "lectura de socket" );
-			exit( 1 );
-		}
-		printf( "Respuesta: %s\n", buffer );
-		if( terminar ) {
-			printf( "Finalizando ejecución\n" );
-			exit(0);
-		}
-		*/
 	}
 	return 0;
 }

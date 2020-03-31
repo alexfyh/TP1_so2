@@ -5,7 +5,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-#define TAM 256
+#include "buffer_functions.h"
+
 #define MAX_CONNECTION 5
 #define MAX_TRY 3
 
@@ -15,9 +16,9 @@ int main(int argc, char *argv[])
 	int32_t sockfd, newsockfd, pid;
 	uint32_t clilen;
 	uint16_t puerto;
-	char buffer[TAM];
+	char buffer[BUFFER_SIZE];
 	struct sockaddr_in serv_addr, cli_addr;
-	ssize_t n;
+	//size_t n;
 
 	if (argc < 2)
 	{
@@ -70,69 +71,21 @@ int main(int argc, char *argv[])
 			close(sockfd);
 			while (1)
 			{
-				char user_input[TAM];
-				char password_input[TAM];
-				{
-					memset(buffer, '\0', TAM);
-					n = write(newsockfd, "login:", TAM - 1);
-					if (n < 0)
-					{
-						perror("escritura de socket");
-						exit(1);
-					}
-					n = read(newsockfd, buffer, TAM - 1);
-					if (n < 0)
-					{
-						perror("lectura de socket");
-						exit(1);
-					}
-					strncpy(user_input, buffer, TAM - 1);
-				}
+				char user_input[BUFFER_SIZE];
+				//	TODO = Ver si es necesario guardar la contrasena
+				char password_input[BUFFER_SIZE];
+				
+				write_buffer(newsockfd,LOGIN,buffer);
+				read_buffer(newsockfd,buffer);
+				strncpy(user_input, buffer, BUFFER_SIZE - 1);
 
-				{
-					memset(buffer, '\0', TAM);
-					n = write(newsockfd, "password:", strnlen("password:", TAM - 1));
-					if (n < 0)
-					{
-						perror("escritura de socket");
-						exit(1);
-					}
-					n = read(newsockfd, buffer, TAM - 1);
-					if (n < 0)
-					{
-						perror("lectura de socket");
-						exit(1);
-					}
-					strncpy(password_input, buffer, TAM - 1);
-				}
+				write_buffer(newsockfd,PASSWORD,buffer);
+				read_buffer(newsockfd,buffer);
+				strncpy(password_input, buffer, BUFFER_SIZE - 1);
 
 				printf("Usuario: %s \nPassword: %s", user_input, password_input);
+				printf("Esto es todo, amigos. \nFinalizado proceso hijo.Salu2");
 				exit(0);
-
-				/*
-				memset(buffer, 0, TAM);
-				n = read(newsockfd, buffer, TAM - 1);
-				if (n < 0)
-				{
-					perror("lectura de socket");
-					exit(1);
-				}
-				printf("PROCESO %d. ", getpid());
-				printf("Recibí: %s", buffer);
-				n = write(newsockfd, "Obtuve su mensaje", 18);
-				if (n < 0)
-				{
-					perror("escritura en socket");
-					exit(1);
-				}
-				// Verificación de si hay que terminar
-				buffer[strlen(buffer) - 1] = '\0';
-				if (!strcmp("fin", buffer))
-				{
-					printf("PROCESO %d. Como recibí 'fin', termino la ejecución.\n\n", getpid());
-					exit(0);
-				}
-				*/
 			}
 		}
 		else
@@ -143,3 +96,5 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
+
+

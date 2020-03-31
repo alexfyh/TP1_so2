@@ -9,11 +9,11 @@ CFLAGS=-Werror -Wall -Wextra -Wconversion -std=gnu11
 all: server client
 .PHONY: all
 
-server: server.o
-	$(CC) -o server server.o
+server: server.o buffer_functions.o
+	$(CC) -o server server.o buffer_functions.o
 
-client: client.o
-	$(CC) -o client client.o
+client: client.o buffer_functions.o
+	$(CC) -o client client.o buffer_functions.o
 
 clean:
 	rm -f server client *.o

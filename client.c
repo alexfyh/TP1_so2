@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	struct hostent *server;
 	uint16_t puerto;
 	char buffer[BUFFER_SIZE];
-
+	memset(buffer,'\0',sizeof(buffer));
 	if (argc < 3)
 	{
 		fprintf(stderr, "Uso %s host puerto\n", argv[0]);

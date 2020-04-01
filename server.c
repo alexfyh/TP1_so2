@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
 	uint32_t clilen;
 	uint16_t puerto;
 	char buffer[BUFFER_SIZE];
+	memset(buffer,'\0',sizeof(buffer));
 	struct sockaddr_in serv_addr, cli_addr;
 	//size_t n;
 

@@ -39,6 +39,7 @@ void write_buffer(int32_t socket, const char *source, char *buffer)
 //  TODO = Ver si es necesario devolver el puntero, ya que el buffer se puede acceder por afuera
 char *read_buffer(int32_t socket, char *buffer)
 {
+    memset(buffer, '\0', BUFFER_SIZE);
     ssize_t n;
     n = read(socket, buffer, BUFFER_SIZE - 1);
     if (n < 0)

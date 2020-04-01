@@ -1,3 +1,5 @@
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +9,12 @@
 #define users_db "users.csv"
 #define FIELD_LENGTH 25
 #define LINE_LENGTH 100
+
+const char *ACCESS_DENIED = "ACCESS DENIED\n";
+const char *LOGIN_FAIL = "LOGIN FAILED\n";
+const char *LOGIN_SUCCESS = "LOGIN SUCCESSFUL\n";
+const char *LOGIN = "login:";
+const char *PASSWORD="password:";
 
 bool isAuthorized(char *user, char *password)
 {

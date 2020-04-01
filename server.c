@@ -5,7 +5,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "buffer_functions.h"
+#include "login_functions.h"
+#include "state.c"
 
 #define MAX_CONNECTION 5
 #define MAX_TRY 3
@@ -23,13 +26,13 @@ int main(int argc, char *argv[])
 	if (argc < 2)
 	{
 		fprintf(stderr, "Uso: %s <puerto>\n", argv[0]);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
 	{
 		perror(" apertura de socket ");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	memset((char *)&serv_addr, 0, sizeof(serv_addr));
 	//	TODO = error si el resultado de atoi es menor a 0 o 1024.
@@ -41,13 +44,13 @@ int main(int argc, char *argv[])
 	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 	{
 		perror("ligadura");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	printf("Proceso: %d - socket disponible: %d\n", getpid(), ntohs(serv_addr.sin_port));
 	if (listen(sockfd, MAX_CONNECTION))
 	{
 		perror("listen");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	clilen = sizeof(cli_addr);
 	while (1)
@@ -56,37 +59,75 @@ int main(int argc, char *argv[])
 		if (newsockfd < 0)
 		{
 			perror("accept");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
 		pid = fork();
 		if (pid < 0)
 		{
 			perror("fork");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 
 		if (pid == 0)
 		{
 			close(sockfd);
+			uint8_t trys = MAX_TRY;
+			char user_input[BUFFER_SIZE];
+			STATE state = LOGIN_STATE;
+
+			//	TODO = Ver si es necesario guardar la contrasena
+			char password_input[BUFFER_SIZE];
 			while (1)
 			{
-				char user_input[BUFFER_SIZE];
-				//	TODO = Ver si es necesario guardar la contrasena
-				char password_input[BUFFER_SIZE];
-				
-				write_buffer(newsockfd,LOGIN,buffer);
-				read_buffer(newsockfd,buffer);
-				strncpy(user_input, buffer, BUFFER_SIZE - 1);
+				switch (state)
+				{
+				case LOGIN_STATE:
+					write_buffer(newsockfd, LOGIN, buffer);
+					read_buffer(newsockfd, buffer);
+					strncpy(user_input, buffer, BUFFER_SIZE - 1);
+					write_buffer(newsockfd, PASSWORD, buffer);
+					read_buffer(newsockfd, buffer);
+					strncpy(password_input, buffer, BUFFER_SIZE - 1);
+					printf("Usuario: %s \nPassword: %s\n", user_input, password_input);
+					bool login_result = isAuthorized(user_input, password_input);
 
-				write_buffer(newsockfd,PASSWORD,buffer);
-				read_buffer(newsockfd,buffer);
-				strncpy(password_input, buffer, BUFFER_SIZE - 1);
+					if (login_result)
+					{
+						state = EXECUTE_STATE;
+						strncpy(buffer, LOGIN_SUCCESS, strlen(LOGIN_SUCCESS));
+						write_buffer(newsockfd, strncpy(buffer, user_input, BUFFER_SIZE), buffer);
+					}
+					else
+					{
+						trys--;
+						if (!trys)
+						{
+							state = DENIED_STATE;
+							write_buffer(newsockfd, LOGIN_FAIL, buffer);
+						}
+					}
+					break;
+				case EXECUTE_STATE:
+					while (1)
+					{
+						printf("Ejecutando comando %s", read_buffer(newsockfd, buffer));
+						write_buffer(newsockfd, user_input, buffer);
+					}
+					break;
 
-				printf("Usuario: %s \nPassword: %s", user_input, password_input);
-				printf("Esto es todo, amigos. \nFinalizado proceso hijo.Salu2");
-				exit(0);
+				case DENIED_STATE:
+					exit(EXIT_SUCCESS);
+					break;
+
+				default:
+					exit(EXIT_FAILURE);
+					break;
+				}
 			}
+			//	Sesión finalizada
+			printf("Esto es todo, amigos. \nFinalizado proceso hijo.Salu2\n");
+			exit(EXIT_SUCCESS);
 		}
 		else
 		{
@@ -96,5 +137,3 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
-
-

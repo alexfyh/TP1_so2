@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	struct Server_Request *request = malloc(sizeof(struct Server_Request));
-	struct Server_Request *response = malloc(sizeof(struct Server_Response));
+	struct Server_Response *response = malloc(sizeof(struct Server_Response));
 	char user [ARGUMENT_SIZE]="";
 	char buffer[BUFFER_SIZE]="";
 	STATE state=LOGIN_STATE;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 				printf("\nSuccessful login\n");
 				state=EXECUTE_STATE;	
 			}
-			else if (response->code=Server_LOGIN_REJECTED)
+			else if (response->code==Server_LOGIN_REJECTED)
 			{
 				printf("\nSession rejected\n");
 				state=EXIT_STATE;

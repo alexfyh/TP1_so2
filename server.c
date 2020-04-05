@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 		{
 			close(sockfd);
 			uint8_t trys = MAX_TRY;
-			char user_input[32];
+			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER 
 			STATE state = LOGIN_STATE;
 			struct Server_Request *server_request = malloc(sizeof(struct Server_Request));
 			struct Server_Response *server_response = malloc(sizeof(struct Server_Response));

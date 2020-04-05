@@ -12,7 +12,7 @@
 void send_mod(int32_t fd, const void *buf, size_t n, int32_t flags)
 {
 	ssize_t sended = send(fd, buf, n, flags);
-	if (!sended>0)
+	if (!(sended>0))
 	{
 		perror("Error en el escritura - socket");
 		exit(EXIT_FAILURE);
@@ -23,7 +23,7 @@ void send_mod(int32_t fd, const void *buf, size_t n, int32_t flags)
 void recv_mod(int32_t fd, void *buf, size_t n, int32_t flags)
 {
 	ssize_t recieved = recv(fd, buf, n, flags);
-	if (!recieved>0)
+	if (!(recieved>0))
 	{
 		printf("%ld\n",recieved);
 		perror("Error en la lectura - socket");
@@ -35,7 +35,7 @@ void recv_mod(int32_t fd, void *buf, size_t n, int32_t flags)
 void write_mod(int32_t fd, void *buf, size_t n)
 {
 	ssize_t written = write(fd, buf, n);
-	if (!written>0)
+	if (!(written>0))
 	{
 		perror("Error en la escritura - pipe");
 		exit(EXIT_FAILURE);
@@ -46,7 +46,7 @@ void write_mod(int32_t fd, void *buf, size_t n)
 void read_mod(int32_t fd, void *buf, size_t n)
 {
 	ssize_t readed = read(fd, buf, n);
-	if (!readed>0)
+	if (!(readed>0))
 	{
 		perror("Error en la lectura - pipe");
 		exit(EXIT_FAILURE);

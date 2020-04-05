@@ -17,9 +17,8 @@ int main(int argc, char *argv[])
         //perror("File descriptors needed!!!");
         exit(EXIT_FAILURE);
     }
-    //  Qué tan grande va a ser un fd???
-    uint32_t fd_read = atoi(argv[1]);
-    uint32_t fd_write = atoi(argv[2]);
+    int32_t fd_read = atoi(argv[1]);
+    int32_t fd_write = atoi(argv[2]);
     if (!fd_read || !fd_write) 
     {
         perror("Casteo de descriptores fallido");
@@ -31,19 +30,15 @@ int main(int argc, char *argv[])
     struct Auth_Response *response =malloc(sizeof(struct Auth_Response));
     //  TODO = debería alocar memoria??? //memory gone wild
     //memset(&response,0,sizeof(struct Auth_Response));
-    int32_t recv_flags = 0;
-    int32_t send_flags = 0;
     ssize_t n;
     
     while (1)
     {
-        //n = recv(fd_read, request, sizeof(struct Auth_Request), recv_flags);
         n = read(fd_read, request, sizeof(struct Auth_Request));
         if (n != sizeof(struct Auth_Request))
         {
             perror("No se ha leído la estructura correctamente");
             response->code = Auth_FAIL;
-            send_flags = 0;
         }
         else
         {
@@ -58,7 +53,6 @@ int main(int argc, char *argv[])
                 {
                     response->code = Auth_FAIL;
                 }
-                send_flags = 0;
                 break;
             case Auth_LIST:
                 /* code */
@@ -72,7 +66,6 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-        //n = send(fd_write, &response, sizeof(struct Auth_Response),send_flags);
         n = write(fd_write, &response, sizeof(struct Auth_Response));
         if (n!=sizeof(struct Auth_Response))
         {

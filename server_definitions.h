@@ -20,7 +20,7 @@ typedef struct Server_Request
     Server_Request_Code code;
     char first_argument [ARGUMENT_SIZE];
     char second_argument [ARGUMENT_SIZE];
-}Server_Request_TAG;
+}Server_Request;
 
 typedef struct Server_Response
 {

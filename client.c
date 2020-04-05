@@ -6,17 +6,19 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
-#include "buffer_functions.h"
-#include "login_functions.h"
+
+#include "transactions.h" 
+#include "server_definitions.h"
+#include "state.h"
+
+#define BUFFER_SIZE 120
 
 int main(int argc, char *argv[])
 {
-	int sockfd;
+	int32_t sockfd;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 	uint16_t puerto;
-	char buffer[BUFFER_SIZE];
-	memset(buffer,'\0',sizeof(buffer));
 	if (argc < 3)
 	{
 		fprintf(stderr, "Uso %s host puerto\n", argv[0]);
@@ -45,17 +47,62 @@ int main(int argc, char *argv[])
 		perror("conexion");
 		exit(EXIT_FAILURE);
 	}
-
+	struct Server_Request *request = malloc(sizeof(struct Server_Request));
+	struct Server_Request *response = malloc(sizeof(struct Server_Response));
+	char user [ARGUMENT_SIZE]="";
+	char buffer[BUFFER_SIZE]="";
+	STATE state=LOGIN_STATE;
+	int32_t send_flags = 0;
+	int32_t recv_flags = 0;
+	
 	while (1)
 	{
-		//	TODO = ponele voluntad, la ctm
-		//	TODO = ver de usar la versión safe de printf
-		printf("%s", read_buffer(sockfd, buffer));
-		if (!strncmp(buffer, LOGIN_FAIL, BUFFER_SIZE))
+		switch (state)
 		{
+		case LOGIN_STATE:
+			printf("login:");
+			fgets(user,ARGUMENT_SIZE,stdin);
+			user[strcspn(user, "\n")] = 0;
+			printf("password:");
+			fgets(buffer,ARGUMENT_SIZE,stdin);
+			buffer[strcspn(buffer, "\n")] = 0;
+			strncpy(request->first_argument,user,ARGUMENT_SIZE);
+			strncpy(request->second_argument,buffer,ARGUMENT_SIZE);
+			request->code=Server_LOGIN;
+			send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
+			recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
+			if (response->code==Server_LOGIN_SUCCESS)
+			{
+				printf("\nSuccessful login\n");
+				state=EXECUTE_STATE;	
+			}
+			else if (response->code=Server_LOGIN_REJECTED)
+			{
+				printf("\nSession rejected\n");
+				state=EXIT_STATE;
+			}	
+			break;
+		case EXECUTE_STATE:
+			printf("%s$",user);
+			
+			exit(0);
+			
+			break;
+		case EXIT_STATE:
+			printf("\nSession completed\n");
+			close(sockfd);
 			exit(EXIT_SUCCESS);
+			break;
+		default:
+			perror("Estado no determinado...????");
+			printf("\nSession completed\n");
+			close(sockfd);
+			exit(EXIT_FAILURE);
+			break;
 		}
-		write_buffer(sockfd, NULL, buffer);
 	}
 	return 0;
 }
+
+
+//gcc -o client server_definitions.h state.h  transactions.c client.c

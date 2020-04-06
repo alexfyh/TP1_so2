@@ -7,8 +7,8 @@
 #include <stdbool.h>
 
 #define users_db "users.csv"
-#define FIELD_LENGTH 25
-#define LINE_LENGTH 100
+#define FIELD_LENGTH 32
+#define LINE_LENGTH 130
 
 bool isAuthorized(char *user, char *password)
 {
@@ -60,6 +60,9 @@ bool isAuthorized(char *user, char *password)
     }
     return false;
 }
+
+
+
 /*
 #include <time.h>
 

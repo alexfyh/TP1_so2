@@ -10,14 +10,6 @@
 #define FIELD_LENGTH 25
 #define LINE_LENGTH 100
 
-/*
-const char *ACCESS_DENIED = "ACCESS DENIED\n";
-const char *LOGIN_FAIL = "LOGIN FAILED\n";
-const char *LOGIN_SUCCESS = "LOGIN SUCCESSFUL\n";
-const char *LOGIN = "login:";
-const char *PASSWORD="password:";
-
-*/
 bool isAuthorized(char *user, char *password)
 {
     if (user == NULL || password == NULL)
@@ -68,6 +60,20 @@ bool isAuthorized(char *user, char *password)
     }
     return false;
 }
+/*
+#include <time.h>
+
+
+time_t t = time(NULL);
+struct tm *tm = localtime(&t);
+printf("%s", asctime(tm));
+FILE *fp = fopen("log","a");
+                    fprintf(fp, "EXITO=%s,%s,%s",request->first_argument,request->second_argument,asctime(tm));
+                    response->code = Auth_SUCCESS;
+                    fclose(fp);
+
+*/
+
 /*
 void setUnAuthorized(char *user)
 {

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     //  TODO = debería alocar memoria??? //memory gone wild
     //memset(&response,0,sizeof(struct Auth_Response));
     ssize_t n;
-    
+
     while (1)
     {
         n = read(fd_read, request, sizeof(struct Auth_Request));
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-        n = write(fd_write, &response, sizeof(struct Auth_Response));
+        n = write(fd_write, response, sizeof(struct Auth_Response));
         if (n!=sizeof(struct Auth_Response))
         {
             //  TODO = cómo se debería comportar teniendo en cuenta que

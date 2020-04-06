@@ -25,7 +25,6 @@ void recv_mod(int32_t fd, void *buf, size_t n, int32_t flags)
 	ssize_t recieved = recv(fd, buf, n, flags);
 	if (!(recieved>0))
 	{
-		printf("%ld\n",recieved);
 		perror("Error en la lectura - socket");
 		exit(EXIT_FAILURE);
 	}

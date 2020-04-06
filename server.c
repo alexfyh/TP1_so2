@@ -39,6 +39,10 @@ int main(int argc, char *argv[])
 		char str_fd_write[12];
 		sprintf(str_fd_read, "%d", Auth_fd_1[0]);
 		sprintf(str_fd_write, "%d", Auth_fd_2[1]);
+
+		//int fd_salida = open("/dev/pts/1", O_WRONLY);
+		//dup2(fd_salida, 1);
+
 		if (execl("auth_service", "auth_service", str_fd_read, str_fd_write, NULL) == -1)
 		{
 			perror("Inicio de Auth_service fallo");
@@ -47,20 +51,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	//	FIN - Comunicacion con Auth_service
-
-	/*
-	ssize_t n = write(Auth_fd_1[1], &request, sizeof(struct Server_Request));
-	if (n < 0)
-	{
-		perror("Fallo en escritura");
-	}
-	else
-	{
-		n = read(Auth_fd_2[0], response, sizeof(struct Server_Response));
-		printf("Respuesta :%d   %s\n", response->code, response->first_argument);
-		wait(NULL);
-	}
-*/
 
 	// MAX PID en 64-bit 2^22
 	int32_t sockfd, newsockfd, pid;
@@ -115,12 +105,16 @@ int main(int argc, char *argv[])
 		{
 			close(sockfd);
 			uint8_t trys = MAX_TRY;
-			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER 
+			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER
 			STATE state = LOGIN_STATE;
 			struct Server_Request *server_request = malloc(sizeof(struct Server_Request));
 			struct Server_Response *server_response = malloc(sizeof(struct Server_Response));
 			struct Auth_Request *auth_request = malloc(sizeof(struct Auth_Request));
 			struct Auth_Response *auth_response = malloc(sizeof(struct Auth_Response));
+
+			memset(auth_request, '0', sizeof(struct Auth_Request));
+			memset(auth_response, '0', sizeof(struct Auth_Response));
+
 			while (1)
 			{
 				switch (state)
@@ -128,69 +122,47 @@ int main(int argc, char *argv[])
 				case LOGIN_STATE:
 					do
 					{
-						printf("Size =%lu\n",sizeof(struct Server_Request));
 						recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
 						//	TODO = Ver si el cliente me manda diferente
-						strncpy(auth_request->first_argument,server_request->first_argument,ARGUMENT_SIZE);
-						strncpy(auth_request->second_argument,server_request->second_argument,ARGUMENT_SIZE);
+						auth_request->code = Auth_LOGIN;
+						strncpy(auth_request->first_argument, server_request->first_argument, ARGUMENT_SIZE - 1);
+						strncpy(auth_request->second_argument, server_request->second_argument, ARGUMENT_SIZE - 1);
 						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
-						if(auth_response->code==Auth_SUCCESS){
-							server_response->code=Server_LOGIN_SUCCESS;
-							state=EXECUTE_STATE;
-						}
-						else if (trys>1)
+						if (auth_response->code == Auth_SUCCESS)
 						{
-							server_response->code=Server_LOGIN_FAIL;
-						}else
-						{
-							server_response->code=Server_LOGIN_REJECTED;
+							server_response->code = Server_LOGIN_SUCCESS;
+							state = EXECUTE_STATE;
 						}
-						send_mod(newsockfd,server_response,sizeof(struct Server_Response),0);
+						else if (--trys > 0)
+						{
+							server_response->code = Server_LOGIN_FAIL;
+						}
+						else
+						{
+							server_response->code = Server_LOGIN_REJECTED;
+						}
+						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 
-					} while (--trys);
+					} while (trys);
 					state = EXIT_STATE;
-
-					/*
-					write_buffer(newsockfd, LOGIN, buffer);
-					read_buffer(newsockfd, buffer);
-					strncpy(user_input, buffer, BUFFER_SIZE - 1);
-					write_buffer(newsockfd, PASSWORD, buffer);
-					read_buffer(newsockfd, buffer);
-					strncpy(password_input, buffer, BUFFER_SIZE - 1);
-					printf("Usuario: %s \nPassword: %s\n", user_input, password_input);
-					bool login_result = isServerorized(user_input, password_input);
-
-					if (login_result)
-					{
-						state = EXECUTE_STATE;
-						strncpy(buffer, LOGIN_SUCCESS, strlen(LOGIN_SUCCESS));
-						write_buffer(newsockfd, strncpy(buffer, user_input, BUFFER_SIZE), buffer);
-					}
-					else
-					{
-						trys--;
-						if (!trys)
-						{
-							state = DENIED_STATE;
-							write_buffer(newsockfd, LOGIN_FAIL, buffer);
-						}
-					}
-					*/
 					break;
 				case EXECUTE_STATE:
-					while (1)
-					{
-						//printf("Ejecutando comando %s", read_buffer(newsockfd, buffer));
-						//write_buffer(newsockfd, user_input, buffer);
-					}
+					/*
+					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
+					server_response->code=
+
+					send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
+					*/
 					break;
 
 				case EXIT_STATE:
+					close(newsockfd);
 					exit(EXIT_SUCCESS);
 					break;
 
 				default:
+					close(newsockfd);
 					exit(EXIT_FAILURE);
 					break;
 				}
@@ -198,6 +170,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
+			wait(0);
 			printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
 			close(newsockfd);
 		}
@@ -208,5 +181,4 @@ int main(int argc, char *argv[])
 
 //int setUp_comunnication(int fd_1[], int fd_2 [],char * arguments[]);
 
-
-//gcc -o server transactions.c server_definitions.h auth_definitions.h  server.c 
+//gcc -o server transactions.c server_definitions.h auth_definitions.h  server.c

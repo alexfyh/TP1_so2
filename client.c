@@ -78,7 +78,6 @@ int main(int argc, char *argv[])
 			}
 			else if (response->code==Server_LOGIN_REJECTED)
 			{
-				printf("\nSession rejected\n");
 				state=EXIT_STATE;
 			}	
 			break;
@@ -89,7 +88,6 @@ int main(int argc, char *argv[])
 			
 			break;
 		case EXIT_STATE:
-			printf("\nSession completed\n");
 			close(sockfd);
 			exit(EXIT_SUCCESS);
 			break;

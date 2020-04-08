@@ -3,13 +3,13 @@
 #define URL "http://rosettacode.org/wiki/CSV_data_manipulation"
  
 #define _GNU_SOURCE
-#define bool int
 #include <stdio.h>
 #include <stdlib.h> /* malloc...*/
 #include <string.h> /* strtok...*/
 #include <ctype.h>
 #include <errno.h>
- 
+#include <stdbool.h>
+#include <stdint.h>
  
 /**
  * How to read a CSV file ?
@@ -29,13 +29,13 @@ typedef struct {
  */
 int trim(char ** str) {
 	int trimmed;
-	int n;
-	int len;
+	uint64_t n;
+	uint64_t len;
  
 	len = strlen(*str);
 	n = len - 1;
 	/* from right */
-	while((n>=0) && isspace((*str)[n])) {
+	while((n>0) && isspace((*str)[n])) {
 		(*str)[n] = '\0'; 
 		trimmed += 1;
 		n--;
@@ -110,7 +110,7 @@ int csv_set(CSV * csv, unsigned int col, unsigned int row, char * value) {
 }
  
 void csv_display(CSV * csv) {
-	int row, col;
+	uint32_t row, col;
 	char * content;
 	if ((csv->rows == 0) || (csv->cols==0)) {
 		printf("[Empty table]\n");
@@ -232,7 +232,7 @@ error:
  **/
 int csv_save(CSV * csv, char * filename) {
 	FILE * fp;
-	int row, col;
+	uint32_t row, col;
 	char * content;
  
 	fp = fopen(filename, "w");
@@ -246,31 +246,5 @@ int csv_save(CSV * csv, char * filename) {
 	}
  
 	fclose(fp);
-	return 0;
-}
- 
- 
-/** 
- * Test
- */
-int main(int argc, char ** argv) {
-	CSV * csv;
- 
-	printf("%s\n%s\n\n",TITLE, URL);
- 
-	csv = csv_create(0, 0);
-	csv_open(csv, "csv_entrada.csv");
-	csv_display(csv);
- 
-	csv_set(csv, 0, 0, "Column0");
-	csv_set(csv, 1, 1, "100");
-	csv_set(csv, 2, 2, "200");
-	csv_set(csv, 3, 3, "33333300");
-	csv_set(csv, 4, 4, "400");
-	csv_display(csv);
- 
-	csv_save(csv, "csv_entrada.csv");
-	csv_destroy(csv);
- 
 	return 0;
 }

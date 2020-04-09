@@ -15,16 +15,15 @@
 #define date_column 3
 
 //TODO implementar strnlen en vez de strlen
-
-int8_t get_userPosition(char *user)
+//  TODO = tratar de borrar ese casteo explícito hecho.
+int32_t get_userPosition(char *user)
 {
     CSV *csv = csv_create(0, 0);
     csv_open(csv, users_db);
     char *row_user;
-    int8_t i = 0;
-    for (int8_t i = 0; i < csv->rows; i++)
+    for (int32_t i = 0; i < (int32_t)csv->rows; i++)
     {
-        row_user = csv_get(csv, user_column, i);
+        row_user = csv_get(csv, user_column, (uint32_t)i);
         if (strlen(user) == strlen(row_user) && !(strncmp(user, row_user, strlen(user))))
         {
             return i;
@@ -37,13 +36,13 @@ bool isAuthorized(char *user, char *password)
 {
     CSV *csv = csv_create(0, 0);
     csv_open(csv, users_db);
-    int8_t row_number = get_userPosition(user);
+    int32_t row_number = get_userPosition(user);
     if (row_number == -1)
     {
         return false;
     }
-    char *password_db = csv_get(csv, password_column, row_number);
-    uint8_t enabled = atoi(csv_get(csv, enabled_column, row_number));
+    char *password_db = csv_get(csv, password_column,(uint32_t)row_number);
+    int32_t enabled = atoi(csv_get(csv, enabled_column, (uint32_t)row_number));
 
     if (strlen(password) == strlen(password_db) && !(strncmp(password, password_db, strlen(password_db))) && enabled)
     {
@@ -52,27 +51,28 @@ bool isAuthorized(char *user, char *password)
         //char time_string [20] = {0};
         //strncpy(time_string,asctime(tm),19); 
         //time_string[strcspn(time_string, "\n")] = 0;
-        csv_set(csv,date_column,row_number,strtok(asctime(tm), "\n"));
+        csv_set(csv,date_column,(uint32_t)row_number,strtok(asctime(tm), "\n"));
         csv_save(csv,users_db);
         return true;
     }
     return false;
 }
 
-int8_t setUserPassword(char *user,char *password){
+bool setUserPassword(char *user,char *password){
     //TODO ver límite definido por la estrucutra de los argumentos del servidor
     CSV *csv = csv_create(0, 0);
     csv_open(csv, users_db);
-    int8_t row_number = get_userPosition(user);
+    int32_t row_number = get_userPosition(user);
     if (row_number == -1)
     {
         return false;
     }
-    csv_set(csv,password_column,row_number,password);
+    csv_set(csv,password_column,(uint32_t)row_number,password);
     csv_save(csv,users_db);
+    return true;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
 
     printf("%d\n", isAuthorized("user_1", "passwd_2"));

@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 			recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
 			if (response->code==Server_LOGIN_SUCCESS)
 			{
-				printf("\nSuccessful login\n");
+				printf("Successful login\n");
 				state=EXECUTE_STATE;	
 			}
 			else if (response->code==Server_LOGIN_REJECTED)
@@ -88,10 +88,12 @@ int main(int argc, char *argv[])
         	buffer[strcspn(buffer, "\n")] = 0;
 			if (formatRequest(buffer,request))
 			{
-				printf("Codigo%d\n",request->code);
 				send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
 				recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
-				printf("Respuesta = %s\n",response->first_argument);
+				printf("%d\n",response->code);
+				if(response->code==Server_LOGOUT_SUCCESS){
+					state=EXIT_STATE;
+				}
 			}
 			else{
 				printf("Command not found\n");
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
 		case EXIT_STATE:
 		//TODO = enviar acá la finalización ????
 		//o adjuntar todo en una función que cierre descriptores,libere y cierra socket ?
+			printf("\n%s","Finalizado sesion\n");
 			close(sockfd);
 			//free(request);
 			//free(response);

@@ -19,8 +19,8 @@ const char *FILE_CMD = "file";
 
 uint32_t getArgumentsNumber(char *buffer)
 {
-    char *temp_buffer = malloc(sizeof(strlen(buffer)));
-    strncpy(temp_buffer, buffer, 130);
+    char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
+    strncpy(temp_buffer, buffer, LINE_SIZE);
     uint32_t count = 0;
     char *token = strtok(temp_buffer, " ");
     while (token != NULL)
@@ -35,7 +35,7 @@ uint32_t getArgumentsNumber(char *buffer)
 bool formatRequest(char *buffer, struct Server_Request *request)
 {
     bool result;
-    char *temp_buffer = malloc(LINE_SIZE);
+    char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
     strncpy(temp_buffer, buffer, LINE_SIZE);
     char *token = strtok_r(temp_buffer, " ", &temp_buffer);
     printf("Primer argumento= %s\n", token);
@@ -78,6 +78,6 @@ bool formatRequest(char *buffer, struct Server_Request *request)
     {
         result = false;
     }
-    free(temp_buffer);
+    //free(temp_buffer);
     return result;
 }

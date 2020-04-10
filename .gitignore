@@ -4,3 +4,4 @@
 !*.h
 !*.csv
 !Makefile
+users.csv

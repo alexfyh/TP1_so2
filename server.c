@@ -39,10 +39,6 @@ int main(int argc, char *argv[])
 		char str_fd_write[12];
 		sprintf(str_fd_read, "%d", Auth_fd_1[0]);
 		sprintf(str_fd_write, "%d", Auth_fd_2[1]);
-
-		//int fd_salida = open("/dev/pts/1", O_WRONLY);
-		//dup2(fd_salida, 1);
-
 		if (execl("auth_service", "auth_service", str_fd_read, str_fd_write, NULL) == -1)
 		{
 			perror("Inicio de Auth_service fallo");
@@ -100,11 +96,10 @@ int main(int argc, char *argv[])
 			perror("fork");
 			exit(EXIT_FAILURE);
 		}
-
 		if (pid == 0)
 		{
 			close(sockfd);
-			uint8_t trys = MAX_TRY;
+			uint8_t trys = 0;
 			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER
 			STATE state = LOGIN_STATE;
 			struct Server_Request *server_request = malloc(sizeof(struct Server_Request));
@@ -120,39 +115,40 @@ int main(int argc, char *argv[])
 				switch (state)
 				{
 				case LOGIN_STATE:
-					do
+					if (trys >= MAX_TRY)
 					{
-						recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
-						//	TODO = Ver si el cliente me manda diferente
-						auth_request->code = Auth_LOGIN;
-						strncpy(auth_request->first_argument, server_request->first_argument, ARGUMENT_SIZE);
-						strncpy(auth_request->second_argument, server_request->second_argument, ARGUMENT_SIZE);
-						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
-						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
-						if (auth_response->code == Auth_SUCCESS)
-						{
-							strncpy(user, server_request->first_argument, ARGUMENT_SIZE);
-							server_response->code = Server_LOGIN_SUCCESS;
-							strncpy(server_response->first_argument,"LOGIN SUCCESSFUL\n",ARGUMENT_SIZE);
-							state = EXECUTE_STATE;
-						}
-						else if (--trys > 0)
-						{
-							server_response->code = Server_LOGIN_FAIL;
-							strncpy(server_response->first_argument,"LOGIN FAILED\n",ARGUMENT_SIZE);
-						}
-						else
-						{
-							server_response->code = Server_LOGIN_REJECTED;
-							strncpy(server_response->first_argument,"LOGIN REJECT\n",ARGUMENT_SIZE);
-						}
+						state = EXIT_STATE;
+						continue;
+					}
+					fprintf(stdout, "LOGIN STATE\n");
+					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
+					auth_request->code = Auth_LOGIN;
+					strncpy(auth_request->first_argument, server_request->first_argument, ARGUMENT_SIZE);
+					strncpy(auth_request->second_argument, server_request->second_argument, ARGUMENT_SIZE);
+					write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
+					read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
+					if (auth_response->code == Auth_SUCCESS)
+					{
+						strncpy(user, server_request->first_argument, ARGUMENT_SIZE);
+						server_response->code = Server_LOGIN_SUCCESS;
+						strncpy(server_response->first_argument, "LOGIN SUCCESSFUL\n", ARGUMENT_SIZE);
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
-
-					} while (trys);
-					state = EXIT_STATE;
+						state = EXECUTE_STATE;
+						continue;
+					}
+					if (++trys==3)
+					{
+						server_response->code = Server_LOGIN_REJECTED;
+					}else
+					{
+						server_response->code = Server_LOGIN_FAIL;
+					}
+					send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 					break;
 				case EXECUTE_STATE:
+					fprintf(stdout, "EXECUTE STATE\n");
 					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
+					fprintf(stdout, "%d\n", server_request->code);
 					switch (server_request->code)
 					{
 					case Server_PASSWD:
@@ -161,20 +157,20 @@ int main(int argc, char *argv[])
 						strncpy(auth_request->second_argument, server_request->second_argument, ARGUMENT_SIZE);
 						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
-						if (auth_response->code==Auth_SUCCESS)
+						if (auth_response->code == Auth_SUCCESS)
 						{
-							server_response->code=Server_PASSWD_SUCCESS;
-							strncpy(server_response->first_argument,"Password has been changed",ARGUMENT_SIZE);
+							server_response->code = Server_PASSWD_SUCCESS;
+							strncpy(server_response->first_argument, "Password has been changed", ARGUMENT_SIZE);
 						}
 						else
 						{
-							server_response->code=Server_PASSWD_FAILED;
-							strncpy(server_response->first_argument,"password could not be changed",ARGUMENT_SIZE);
+							server_response->code = Server_PASSWD_FAILED;
+							strncpy(server_response->first_argument, "password could not be changed", ARGUMENT_SIZE);
 						}
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case Server_USER_LIST:
-						state = EXIT_STATE;
+						//state = EXIT_STATE;
 						break;
 					case Server_FILE_LIST:
 						/* code */
@@ -182,24 +178,23 @@ int main(int argc, char *argv[])
 					case SERVER_FILE_DOWNLOAD:
 						/* code */
 						break;
+					case SERVER_LOGOUT:
+						state = EXIT_STATE;
+						server_response->code = Server_LOGOUT_SUCCESS;
+						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
+						break;
 					default:
 						break;
 					}
-					send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
-					
-					/*
-					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
-					server_response->code=
-
-					send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
-					*/
+					//send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 					break;
-
 				case EXIT_STATE:
+					fprintf(stdout,"EXIT STATE\n");
+					//close(Auth_fd_1[1]);
+					//close(Auth_fd_2[0]);
 					close(newsockfd);
 					exit(EXIT_SUCCESS);
 					break;
-
 				default:
 					close(newsockfd);
 					exit(EXIT_FAILURE);
@@ -210,7 +205,7 @@ int main(int argc, char *argv[])
 		else
 		{
 			wait(0);
-			printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
+			//printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
 			close(newsockfd);
 		}
 	}

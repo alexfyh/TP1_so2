@@ -55,12 +55,16 @@ int main(int argc, char *argv[])
                 }
                 break;
             case Auth_LIST:
-                /* code */
                 break;
             case Auth_PASSWD:
-                /* code */
+                if(setUserPassword(request->first_argument,request->second_argument)){
+                    response->code = Auth_SUCCESS;
+                }
+                else
+                {
+                    response->code = Auth_FAIL;
+                }
                 break;
-
             default:
                 response->code = Auth_FAIL;
                 break;

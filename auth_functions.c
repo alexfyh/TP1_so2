@@ -72,16 +72,6 @@ bool setUserPassword(char *user,char *password){
     return true;
 }
 
-int main()
-{
-
-    printf("%d\n", isAuthorized("user_1", "passwd_2"));
-    printf("%d\n", isAuthorized("user_2", "passwd_2"));
-    printf("%d\n", isAuthorized("user_3", "passwd_3"));
-    setUserPassword("user_10","passwd_01");
-    return 0;
-}
-
 /*
 Limitaciones de la DB:
 Una fila puede tener máximo de 1023 caracteres

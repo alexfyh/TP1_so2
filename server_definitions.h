@@ -5,13 +5,17 @@ typedef enum Server_Request_Code{
     Server_USER_LIST,
     Server_PASSWD,
     Server_FILE_LIST,
-    SERVER_DOWN
+    SERVER_FILE_DOWNLOAD,
+    SERVER_LOGOUT
 } Server_Request_Code;
 
 typedef enum Server_Response_Code{
     Server_LOGIN_SUCCESS,
     Server_LOGIN_FAIL,
     Server_LOGIN_REJECTED,
+    Server_PASSWD_SUCCESS,
+    Server_PASSWD_FAILED,
+    Server_LOGOUT_SUCCESS,
     Server_CONTINUE
 } Server_Response_Code;
 

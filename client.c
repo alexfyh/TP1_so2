@@ -9,6 +9,7 @@
 
 #include "transactions.h" 
 #include "server_definitions.h"
+#include "client_functions.h"
 #include "state.h"
 
 #define BUFFER_SIZE 120
@@ -83,12 +84,25 @@ int main(int argc, char *argv[])
 			break;
 		case EXECUTE_STATE:
 			printf("%s$",user);
-			
-			exit(0);
-			
+			fgets(buffer, BUFFER_SIZE, stdin);
+        	buffer[strcspn(buffer, "\n")] = 0;
+			if (formatRequest(buffer,request))
+			{
+				printf("Codigo%d\n",request->code);
+				send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
+				recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
+				printf("Respuesta = %s\n",response->first_argument);
+			}
+			else{
+				printf("Command not found\n");
+			}
 			break;
 		case EXIT_STATE:
+		//TODO = enviar acá la finalización ????
+		//o adjuntar todo en una función que cierre descriptores,libere y cierra socket ?
 			close(sockfd);
+			//free(request);
+			//free(response);
 			exit(EXIT_SUCCESS);
 			break;
 		default:

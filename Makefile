@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Werror -Wall -Wextra -Wconversion -std=gnu11 -I .
-DEPS = auth_definitions.h auth_functions.h state.h transactions.h 
+DEPS = auth_definitions.h auth_functions.h state.h transactions.h client_functions.h
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -14,8 +14,11 @@ server: server.o transactions.o
 auth_service: auth_service.o auth_functions.o
 	$(CC) -o auth_service auth_service.o auth_functions.o
 
-client: client.o transactions.o
-	$(CC) -o client client.o transactions.o
+client: client.o transactions.o client_functions.o
+	$(CC) -o client client.o transactions.o client_functions.o
+
+#csv_handler: csv_handler.o
+#	$(CC) -o csv_handler csv_handler.o
 
 clean:
-	rm -f server client auth_service *.o
+	rm -f auth_service client server csv_handler file_service *.o

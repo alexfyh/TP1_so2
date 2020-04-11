@@ -90,8 +90,13 @@ int main(int argc, char *argv[])
 			if (formatRequest(buffer,request))
 			{
 				send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
-				recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
-				printf("%d\n",response->code);
+				do
+				{
+					recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
+					printf(response->first_argument,response->second_argument);
+				} while (response->code==Server_CONTINUE);
+				
+				//printf("%d\n",response->code);
 				if(response->code==Server_LOGOUT_SUCCESS){
 					state=EXIT_STATE;
 				}

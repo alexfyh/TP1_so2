@@ -136,10 +136,11 @@ int main(int argc, char *argv[])
 						state = EXECUTE_STATE;
 						continue;
 					}
-					if (++trys==3)
+					if (++trys == 3)
 					{
 						server_response->code = Server_LOGIN_REJECTED;
-					}else
+					}
+					else
 					{
 						server_response->code = Server_LOGIN_FAIL;
 					}
@@ -171,7 +172,24 @@ int main(int argc, char *argv[])
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case Server_USER_LIST:
-						//state = EXIT_STATE;
+						auth_request->code = Auth_LIST;
+						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
+						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
+						while (auth_response->code == Auth_CONTINUE)
+						{
+							server_response->code = Server_CONTINUE;
+							strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
+							strncpy(server_response->second_argument, auth_response->second_argument, ARGUMENT_SIZE);
+							strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
+							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
+							read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
+							
+						}
+						server_response->code = Server_FINISH;
+						strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
+						strncpy(server_response->second_argument, auth_response->second_argument, ARGUMENT_SIZE);
+						strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
+						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case Server_FILE_LIST:
 						/* code */
@@ -190,7 +208,7 @@ int main(int argc, char *argv[])
 					//send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 					break;
 				case EXIT_STATE:
-					fprintf(stdout,"EXIT STATE\n");
+					fprintf(stdout, "EXIT STATE\n");
 					//close(Auth_fd_1[1]);
 					//close(Auth_fd_2[0]);
 					close(newsockfd);

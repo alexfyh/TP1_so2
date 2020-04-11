@@ -16,7 +16,8 @@ typedef enum Server_Response_Code{
     Server_PASSWD_SUCCESS,
     Server_PASSWD_FAILED,
     Server_LOGOUT_SUCCESS,
-    Server_CONTINUE
+    Server_CONTINUE,
+    Server_FINISH
 } Server_Response_Code;
 
 typedef struct Server_Request

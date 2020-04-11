@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
         }
         else
         {
+            uint32_t usersCount;
+
             switch (request->code)
             {
             case Auth_LOGIN:
@@ -55,6 +57,29 @@ int main(int argc, char *argv[])
                 }
                 break;
             case Auth_LIST:
+                usersCount = getUsersCount();
+                if (usersCount == 0)
+                {
+                    //Si se borraron los usuarios justo,sale del switch y envia error
+                    response->code = Auth_LIST_FAIL;
+                    break;
+                }
+                uint32_t rowNumber = 0;
+                struct UserInfo userInfo;
+                for (rowNumber = 0; rowNumber < usersCount-1; rowNumber++)
+                {
+                    userInfo = getUserInfoByRowNumber(rowNumber);
+                    strncpy(response->first_argument,userInfo.name,ARGUMENT_SIZE);
+                    strncpy(response->second_argument,userInfo.enabled,ARGUMENT_SIZE);
+                    strncpy(response->third_argument,userInfo.date,ARGUMENT_SIZE);
+                    response->code = Auth_CONTINUE;
+                    write(fd_write, response, sizeof(struct Auth_Response));           
+                }
+                userInfo = getUserInfoByRowNumber(rowNumber);
+                strncpy(response->first_argument,userInfo.name,ARGUMENT_SIZE);
+                strncpy(response->second_argument,userInfo.enabled,ARGUMENT_SIZE);
+                strncpy(response->third_argument,userInfo.date,ARGUMENT_SIZE);
+                response->code = Auth_FINISH;            
                 break;
             case Auth_PASSWD:
                 if(setUserPassword(request->first_argument,request->second_argument)){

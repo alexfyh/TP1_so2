@@ -7,12 +7,18 @@
 #include <time.h>
 
 #include "csv_handler.c"
+#include "auth_functions.h"
 
 #define users_db "users.csv"
 #define user_column 0
 #define password_column 1
 #define enabled_column 2
 #define date_column 3
+#define ENANBLED_STRING "ENABLED"
+#define DISABLED_STRING "DISABLED"
+#define FIELD_SIZE 32
+
+
 
 //TODO implementar strnlen en vez de strlen
 //  TODO = tratar de borrar ese casteo explícito hecho.
@@ -72,12 +78,25 @@ bool setUserPassword(char *user,char *password){
     return true;
 }
 
-/*
-Limitaciones de la DB:
-Una fila puede tener máximo de 1023 caracteres
-Si un nombre de usuario se repite, sólo tomará en cuenta el primero encontrado
-Los campos no pueden ser vacíos (,,), sí soporta espacios en blanco
+uint32_t getUsersCount(){
+    CSV *csv = csv_create(0, 0);
+    csv_open(csv, users_db);
+    return csv->rows;
+}
 
-Si le pongo la restriccion de cierto tamaño con la funcion
-strnlen, puedo evitar overflow del buffer.
-*/
+struct UserInfo getUserInfoByRowNumber(uint32_t row){
+    struct UserInfo userInfo;
+    CSV *csv = csv_create(0, 0);
+    csv_open(csv, users_db);
+    strncpy(userInfo.name,csv_get(csv,user_column,row),FIELD_SIZE);
+    if (atoi(csv_get(csv,enabled_column,row)))
+    {
+        strncpy(userInfo.enabled,ENANBLED_STRING,FIELD_SIZE);
+    }
+    else
+    {
+        strncpy(userInfo.enabled,DISABLED_STRING,FIELD_SIZE);
+    }
+    strncpy(userInfo.date,csv_get(csv,date_column,row),FIELD_SIZE);
+    return userInfo;
+}

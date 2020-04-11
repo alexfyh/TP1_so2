@@ -62,8 +62,9 @@ int main(int argc, char *argv[])
 		{
 		case LOGIN_STATE:
 			printf("login:");
-			fgets(user,ARGUMENT_SIZE,stdin);
-			user[strcspn(user, "\n")] = 0;
+			fgets(buffer,ARGUMENT_SIZE,stdin);
+			buffer[strcspn(buffer, "\n")] = 0;
+			strncpy(user,buffer,sizeof(user));
 			printf("password:");
 			fgets(buffer,ARGUMENT_SIZE,stdin);
 			buffer[strcspn(buffer, "\n")] = 0;

@@ -154,9 +154,10 @@ int main(int argc, char *argv[])
 					case Server_PASSWD:
 						auth_request->code = Auth_PASSWD;
 						strncpy(auth_request->first_argument, user, ARGUMENT_SIZE);
-						strncpy(auth_request->second_argument, server_request->second_argument, ARGUMENT_SIZE);
+						strncpy(auth_request->second_argument, server_request->first_argument, ARGUMENT_SIZE);
 						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
+						//fprintf(stdout,"Resultado del cambio de contrasena%s\n%s\n",server_request->first_argument,server_request->second_argument);
 						if (auth_response->code == Auth_SUCCESS)
 						{
 							server_response->code = Server_PASSWD_SUCCESS;

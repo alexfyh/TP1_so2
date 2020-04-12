@@ -105,17 +105,15 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case EXIT_STATE:
-		//TODO = enviar acá la finalización ????
-		//o adjuntar todo en una función que cierre descriptores,libere y cierra socket ?
-			printf("\n%s","Finalizado sesion\n");
 			close(sockfd);
-			//free(request);
-			//free(response);
+			free(request);
+			free(response);
 			exit(EXIT_SUCCESS);
 			break;
 		default:
 			perror("Estado no determinado...????");
-			printf("\nSession completed\n");
+			free(request);
+			free(response);
 			close(sockfd);
 			exit(EXIT_FAILURE);
 			break;

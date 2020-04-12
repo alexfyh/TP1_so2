@@ -11,8 +11,7 @@
 #include "transactions.h"
 #include "server_definitions.h"
 #include "state.h"
-
-#include "auth_definitions.h"
+#include "auth_functions.h"
 
 #define MAX_CONNECTION 2
 #define MAX_TRY 3

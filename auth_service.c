@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <string.h>
 
-#include "auth_definitions.h"
 #include "auth_functions.h"
 
 int main(int argc, char *argv[])

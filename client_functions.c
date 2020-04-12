@@ -102,10 +102,10 @@ void printResponse(struct Server_Response* response){
         printf("%s\n","LOGOUT");
         break; 
     case ServerResponse_CONTINUE:
-        printf("%s  %s  %s\n",response->first_argument,response->second_argument,response->third_argument);
+        printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
         break;
     case ServerResponse_FINISH:
-        printf("%s  %s  %s\n",response->first_argument,response->second_argument,response->third_argument);
+        printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
         break;
     default:
         printf("%s\n","NOT DEFINED");

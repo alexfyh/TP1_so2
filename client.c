@@ -70,16 +70,17 @@ int main(int argc, char *argv[])
 			buffer[strcspn(buffer, "\n")] = 0;
 			strncpy(request->first_argument,user,ARGUMENT_SIZE);
 			strncpy(request->second_argument,buffer,ARGUMENT_SIZE);
-			request->code=Server_LOGIN;
+			request->requestCode=ServerRequest_LOGIN;
 			send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
 			recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
-			if (response->code==Server_LOGIN_SUCCESS)
+			if (response->responseCode==ServerResponse_LOGIN_SUCCESS)
 			{
-				printf("Successful login\n");
+				printResponse(response);
 				state=EXECUTE_STATE;	
 			}
-			else if (response->code==Server_LOGIN_REJECTED)
+			else if (response->responseCode==ServerResponse_LOGIN_REJECTED)
 			{
+				printResponse(response);
 				state=EXIT_STATE;
 			}	
 			break;
@@ -93,11 +94,9 @@ int main(int argc, char *argv[])
 				do
 				{
 					recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
-					printf(response->first_argument,response->second_argument);
-				} while (response->code==Server_CONTINUE);
-				
-				//printf("%d\n",response->code);
-				if(response->code==Server_LOGOUT_SUCCESS){
+					printResponse(response);
+				} while (response->responseCode==ServerResponse_CONTINUE);
+				if(response->responseCode==ServerResponse_LOGOUT){
 					state=EXIT_STATE;
 				}
 			}

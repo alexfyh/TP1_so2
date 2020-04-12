@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 					if (auth_response->code == Auth_SUCCESS)
 					{
 						strncpy(user, server_request->first_argument, ARGUMENT_SIZE);
-						server_response->code = Server_LOGIN_SUCCESS;
+						server_response->responseCode = ServerResponse_LOGIN_SUCCESS;
 						strncpy(server_response->first_argument, "LOGIN SUCCESSFUL\n", ARGUMENT_SIZE);
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						state = EXECUTE_STATE;
@@ -138,21 +138,20 @@ int main(int argc, char *argv[])
 					}
 					if (++trys == 3)
 					{
-						server_response->code = Server_LOGIN_REJECTED;
+						server_response->responseCode = ServerResponse_LOGIN_REJECTED;
 					}
 					else
 					{
-						server_response->code = Server_LOGIN_FAIL;
+						server_response->responseCode = ServerResponse_LOGIN_FAIL;
 					}
 					send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 					break;
 				case EXECUTE_STATE:
 					fprintf(stdout, "EXECUTE STATE\n");
 					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
-					fprintf(stdout, "%d\n", server_request->code);
-					switch (server_request->code)
+					switch (server_request->requestCode)
 					{
-					case Server_PASSWD:
+					case ServerRequest_PASSWD:
 						auth_request->code = Auth_PASSWD;
 						strncpy(auth_request->first_argument, user, ARGUMENT_SIZE);
 						strncpy(auth_request->second_argument, server_request->first_argument, ARGUMENT_SIZE);
@@ -161,23 +160,21 @@ int main(int argc, char *argv[])
 						//fprintf(stdout,"Resultado del cambio de contrasena%s\n%s\n",server_request->first_argument,server_request->second_argument);
 						if (auth_response->code == Auth_SUCCESS)
 						{
-							server_response->code = Server_PASSWD_SUCCESS;
-							strncpy(server_response->first_argument, "Password has been changed", ARGUMENT_SIZE);
+							server_response->responseCode = ServerResponse_PASSWD_SUCCESS;
 						}
 						else
 						{
-							server_response->code = Server_PASSWD_FAILED;
-							strncpy(server_response->first_argument, "password could not be changed", ARGUMENT_SIZE);
+							server_response->responseCode = ServerResponse_PASSWD_FAILED;
 						}
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
-					case Server_USER_LIST:
+					case ServerRequest_USER_LIST:
 						auth_request->code = Auth_LIST;
 						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
 						while (auth_response->code == Auth_CONTINUE)
 						{
-							server_response->code = Server_CONTINUE;
+							server_response->responseCode = ServerResponse_CONTINUE;
 							strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
 							strncpy(server_response->second_argument, auth_response->second_argument, ARGUMENT_SIZE);
 							strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
@@ -185,21 +182,21 @@ int main(int argc, char *argv[])
 							read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
 							
 						}
-						server_response->code = Server_FINISH;
+						server_response->responseCode = ServerResponse_FINISH;
 						strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
 						strncpy(server_response->second_argument, auth_response->second_argument, ARGUMENT_SIZE);
 						strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
-					case Server_FILE_LIST:
+					case ServerRequest_FILE_LIST:
 						/* code */
 						break;
-					case SERVER_FILE_DOWNLOAD:
+					case ServerRequest_FILE_DOWNLOAD:
 						/* code */
 						break;
-					case SERVER_LOGOUT:
+					case ServerRequest_LOGOUT:
 						state = EXIT_STATE;
-						server_response->code = Server_LOGOUT_SUCCESS;
+						server_response->responseCode = ServerResponse_LOGOUT;
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					default:

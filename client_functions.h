@@ -1,4 +1,5 @@
 #include <stdbool.h>
 
-uint32_t getArgumentsNumber(char *);
+uint8_t getArgumentsCount(char *);
 bool formatRequest(char *, struct Server_Request *);
+void printResponse(struct Server_Response*);

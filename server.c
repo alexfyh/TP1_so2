@@ -12,14 +12,14 @@
 #include "server_definitions.h"
 #include "state.h"
 #include "auth_functions.h"
+#include "file_functions.h"
 
 #define MAX_CONNECTION 2
 #define MAX_TRY 3
 
 int main(int argc, char *argv[])
 {
-	//	Primero definir los pipe de comunicación con Server Service y File Service
-	//	INICIO - Comunicacion con Server_service
+	//	INICIO - Comunicacion con Auth_Service
 	int Auth_fd_1[2];
 	int Auth_fd_2[2];
 	if (pipe(Auth_fd_1) || pipe(Auth_fd_2))
@@ -46,6 +46,34 @@ int main(int argc, char *argv[])
 		}
 	}
 	//	FIN - Comunicacion con Auth_service
+
+	//	INICIO - Comunicacion con File_Service
+	int File_fd_1[2];
+	int File_fd_2[2];
+	if (pipe(File_fd_1) || pipe(File_fd_2))
+	{
+		perror("File pipe failed");
+	}
+	pid_t File_pid = fork();
+	if (File_pid == -1)
+	{
+		perror("File Fork Failed");
+		exit(EXIT_FAILURE);
+	}
+	if (!File_pid)
+	{
+		char str_fd_read[12];
+		char str_fd_write[12];
+		sprintf(str_fd_read, "%d", File_fd_1[0]);
+		sprintf(str_fd_write, "%d", File_fd_2[1]);
+		if (execl("file_service", "file_service", str_fd_read, str_fd_write, NULL) == -1)
+		{
+			perror("Inicio de File_service fallo");
+			//TODO = CERRAR TODOS LOS FDs tanto tanto de Auth como File
+			exit(EXIT_FAILURE);
+		}
+	}
+	//	FIN - Comunicacion con File_service
 
 	// MAX PID en 64-bit 2^22
 	int32_t sockfd, newsockfd, pid;
@@ -101,13 +129,12 @@ int main(int argc, char *argv[])
 			uint8_t trys = 0;
 			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER
 			STATE state = LOGIN_STATE;
-			struct Server_Request *server_request = malloc(sizeof(struct Server_Request));
-			struct Server_Response *server_response = malloc(sizeof(struct Server_Response));
-			struct Auth_Request *auth_request = malloc(sizeof(struct Auth_Request));
-			struct Auth_Response *auth_response = malloc(sizeof(struct Auth_Response));
-
-			memset(auth_request, '0', sizeof(struct Auth_Request));
-			memset(auth_response, '0', sizeof(struct Auth_Response));
+			struct Server_Request *server_request = calloc(1,sizeof(struct Server_Request));
+			struct Server_Response *server_response = calloc(1,sizeof(struct Server_Response));
+			struct Auth_Request *auth_request = calloc(1,sizeof(struct Auth_Request));
+			struct Auth_Response *auth_response = calloc(1,sizeof(struct Auth_Response));
+			struct File_Request *file_request = calloc(1,sizeof(struct File_Request));
+			struct File_Response *file_response = calloc(1,sizeof(struct File_Response));
 			char user[ARGUMENT_SIZE] = {0};
 			while (1)
 			{
@@ -188,7 +215,18 @@ int main(int argc, char *argv[])
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case ServerRequest_FILE_LIST:
-						/* code */
+						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
+						read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
+						while (file_response->code == File_LIST_CONTINUE)
+						{
+							server_response->responseCode = ServerResponse_FILE_CONTINUE;
+							strncpy(server_response->first_argument,file_response->first_argument,ARGUMENT_SIZE);
+							strncpy(server_response->second_argument,file_response->second_argument,ARGUMENT_SIZE);
+							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
+							read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
+						}
+						server_response->responseCode = ServerResponse_FILE_FINISH;
+						read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
 						break;
 					case ServerRequest_FILE_DOWNLOAD:
 						/* code */

@@ -5,7 +5,7 @@ DEPS = auth_definitions.h auth_functions.h state.h transactions.h client_functio
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-all: server auth_service client
+all: server auth_service file_service client
 .PHONY: all
 
 server: server.o transactions.o
@@ -16,6 +16,9 @@ auth_service: auth_service.o auth_functions.o
 
 client: client.o transactions.o client_functions.o
 	$(CC) -o client client.o transactions.o client_functions.o
+
+file_service: file_service.o file_functions.o 
+	$(CC) -o file_service file_service.o file_functions.o transactions.o -lcrypto -lssl
 
 #csv_handler: csv_handler.o
 #	$(CC) -o csv_handler csv_handler.o

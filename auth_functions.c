@@ -10,15 +10,12 @@
 #include "auth_functions.h"
 
 #define users_db "users.csv"
-#define user_column 0
+#define user_column     0
 #define password_column 1
-#define enabled_column 2
-#define date_column 3
+#define enabled_column  2
+#define date_column     3
 #define ENANBLED_STRING "ENABLED"
 #define DISABLED_STRING "DISABLED"
-#define FIELD_SIZE 32
-
-
 
 //TODO implementar strnlen en vez de strlen
 //  TODO = tratar de borrar ese casteo explícito hecho.

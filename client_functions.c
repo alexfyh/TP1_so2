@@ -69,8 +69,15 @@ bool formatRequest(char *buffer, struct Server_Request *request)
     }
     else if (!strncmp(token, FILE_CMD, strlen(FILE_CMD)))
     {
-        printf("File command\n");
-        result = true;
+        token = strtok_r(temp_buffer, " ", &temp_buffer);
+        printf("Segundo argumento= %s\n", token);
+        if (cant_argumentos == 2 && strlen(token) == strlen(LS_CMD) && !strncmp(token, LS_CMD, strlen(LS_CMD)))
+        {
+            printf("FILE LIST\n");
+            request->requestCode = ServerRequest_FILE_LIST;
+            result = true;
+        }
+        /*TODO = FILE DOWNLOAD*/
     }
     else
     {
@@ -106,6 +113,9 @@ void printResponse(struct Server_Response* response){
         break;
     case ServerResponse_FINISH:
         printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
+        break;
+    case ServerResponse_FILE_CONTINUE:
+        printf("%10s  %10s\n",response->first_argument,response->second_argument);
         break;
     default:
         printf("%s\n","NOT DEFINED");

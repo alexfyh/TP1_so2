@@ -15,6 +15,8 @@
 #define ServerResponse_LOGOUT           12
 #define ServerResponse_CONTINUE         13
 #define ServerResponse_FINISH           14
+#define ServerResponse_FILE_CONTINUE    15
+#define ServerResponse_FILE_FINISH      16
 
 typedef struct Server_Request
 {

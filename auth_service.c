@@ -24,11 +24,8 @@ int main(int argc, char *argv[])
         //  TODO = debería avisar al ppid que fallo y finalizarlo
         exit(EXIT_FAILURE);
     }
-    
-    struct Auth_Request *request = malloc(sizeof(struct Auth_Request));
-    struct Auth_Response *response =malloc(sizeof(struct Auth_Response));
-    //  TODO = debería alocar memoria??? //memory gone wild
-    //memset(&response,0,sizeof(struct Auth_Response));
+    struct Auth_Request *request = calloc(1,sizeof(struct Auth_Request));
+    struct Auth_Response *response =calloc(1,sizeof(struct Auth_Response));
     ssize_t n;
 
     while (1)

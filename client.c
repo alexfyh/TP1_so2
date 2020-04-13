@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 				{
 					recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
 					printResponse(response);
-				} while (response->responseCode==ServerResponse_CONTINUE);
+				} while (response->responseCode==ServerResponse_CONTINUE || response->responseCode == ServerResponse_FILE_CONTINUE);
 				if(response->responseCode==ServerResponse_LOGOUT){
 					state=EXIT_STATE;
 				}

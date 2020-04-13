@@ -1,12 +1,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define ARGUMENT_SIZE 32
+#define FIELD_SIZE      32
+#define ARGUMENT_SIZE   32
+
 typedef struct UserInfo
 {
-    char name[ARGUMENT_SIZE];
-    char enabled[ARGUMENT_SIZE];
-    char date[ARGUMENT_SIZE];
+    char name[FIELD_SIZE];
+    char enabled[FIELD_SIZE];
+    char date[FIELD_SIZE];
 }UserInfo;
 
 typedef enum

@@ -1,5 +1,4 @@
 //  https://www.gnu.org/software/libc/manual/html_node/Simple-Directory-Lister.html
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -11,8 +10,11 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#define ISO_PATH "./isos/"
-#define tamano_buffer 250
+#include "file_functions.h"
+#include "transactions.h"
+
+#define ISO_PATH "isos"
+#define ARGUMENT_SIZE 32
 
 //  COMPILAR CON:   gcc -o file_functions file_functions.c -D_DEFAULT_SOURCE
 //              :   gcc -o file_functions file_functions.c -D_BSD_SOURCE
@@ -23,76 +25,109 @@
 //  https://ftp1.digi.com/support/documentation/0220055_d.pdf
 //  https://rosettacode.org/wiki/MD5
 
-unsigned long get_size_by_fd(int);
-void print_md5_sum(unsigned char *);
-
 int main(int argc, char *argv[])
 {
-    /*
-Ver pipes https://www.geeksforgeeks.org/c-program-demonstrate-fork-and-pipe/
-*/
-
+    if (argc != 3)
+    {
+        printf("File descriptors needed!!!\n");
+        //perror("File descriptors needed!!!");
+        exit(EXIT_FAILURE);
+    }
+    int32_t fd_read = atoi(argv[1]);
+    int32_t fd_write = atoi(argv[2]);
+    if (!fd_read || !fd_write)
+    {
+        perror("Casteo de descriptores fallido");
+        //  TODO = debería avisar al ppid que fallo y finalizarlo
+        exit(EXIT_FAILURE);
+    }
+    struct File_Request *request = calloc(1, sizeof(struct File_Request));
+    struct File_Response *response = calloc(1, sizeof(struct File_Response));
+    ssize_t n;
     DIR *dp;
     struct dirent *ep;
-    dp = opendir(ISO_PATH);
-    char cadena[tamano_buffer];
-    memset(cadena, '\0', sizeof(cadena));
-
     unsigned char result[MD5_DIGEST_LENGTH];
-
-    //TODO = Aca se debería quedar escuchando por conexiones el socket???
-    if (dp)
+    if (chdir(ISO_PATH) != 0)
     {
-        while (ep = readdir(dp))
+        perror("No se pudo acceder al directorio\n");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1)
+    {
+        n = read(fd_read, request, sizeof(struct File_Request));
+        if (n != sizeof(struct File_Request))
         {
-            if (ep->d_type != DT_DIR)
+            perror("No se ha leído la estructura correctamente");
+            response->code = File_FAIL;
+        }
+        else
+        {
+            switch (request->code)
             {
-                char file_name[20];
+            case File_LIST:
+                dp = opendir(".");
+                if (dp==NULL)
+                {
+                    perror("No se pudo acceder al directorio_larar");
+                    response->code = File_FAIL;
+                }
+                while ((ep = readdir(dp))!=NULL)
+                {
+                    if (ep->d_type == DT_REG)
+                    {
+                        char *file_buffer;
+                        int32_t file_descript = open(ep->d_name, O_RDONLY);
+                        if (file_descript < 0)
+                        { //Si fallo un archivo, que continue
+                            perror("File descriptor");
+                            continue;
+                        }
+                        int64_t file_size = get_size_by_fd(file_descript);
+                        if (file_size < 0)
+                        { //Si fallo un archivo, que continue
+                            perror("Tamaño no valido");
+                            continue;
+                        }
+                        file_buffer = mmap(0, (uint64_t)file_size, PROT_READ, MAP_SHARED, file_descript, 0);
+                        //TODO casteo implícito porque sino me hubiera salido antes
+                        MD5((unsigned char *)file_buffer, (uint64_t)file_size, result);
+                        munmap(file_buffer, (uint64_t)file_size);
+                        response->code = File_LIST_CONTINUE;
+                        strncpy(response->first_argument,ep->d_name,ARGUMENT_SIZE);
+                        char str_file_size[ARGUMENT_SIZE];
+                        strncpy(response->second_argument,readable_fs(file_size,str_file_size),ARGUMENT_SIZE);
+                        write_mod(fd_write,response,sizeof(struct File_Response));
+                        /*
+                        printf("File name  =%s\n", ep->d_name);
+                        printf("File sieze =%ld\n", file_size);
+                        printf("Hash = ");
+                        print_md5_sum(result);
+                        printf("\n%s\n", result);
+                        */
+                    }
+                }
+                response->code = File_LIST_FINISH;
+                write_mod(fd_write,response,sizeof(struct File_Response));
+                closedir(dp);
+                break;
+            case File_DOWNLOAD:
+                break;
 
-                char *file_buffer;
-                strcpy(file_name, ISO_PATH);
-                strcat(file_name, ep->d_name);
-                int32_t file_descript = open(file_name, O_RDONLY);
-                unsigned long int file_size = get_size_by_fd(file_descript);
-
-                file_buffer = mmap(0, file_size, PROT_READ, MAP_SHARED, file_descript, 0);
-                MD5((unsigned char *)file_buffer, file_size, result);
-                munmap(file_buffer, file_size);
-
-                printf("File name  =%s\n", file_name);
-                printf("File sieze =%ld\n", file_size);
-                printf("Hash = ");
-                print_md5_sum(result);
-                printf("\n");
-                printf("%s",result);
-                printf("\n");
-                //printf("File name= %s\n", ep->d_name);
+            default:
+                response->code = File_FAIL;
+                break;
             }
         }
-        //TODO = acá debería terminar la conexión el socket
-        (void)closedir(dp);
+        n = write(fd_write, response, sizeof(struct File_Response));
+        if (n != sizeof(struct File_Response))
+        {
+            //  TODO = cómo se debería comportar teniendo en cuenta que
+            //  del otro lado se quedó colgado escuchando ???
+            perror("No se ha escrito  correctamente la respuesta");
+        }
     }
-    else
-    {
-        //TODO = acá debería terminar la conexión el socket
-        perror("Couldn't open the directory");
-    }
-    return 0;
-}
-
-unsigned long get_size_by_fd(int fd)
-{
-    struct stat statbuf;
-    if (fstat(fd, &statbuf) < 0)
-        exit(-1);
-    return statbuf.st_size;
-}
-
-void print_md5_sum(unsigned char *md)
-{
-    int i;
-    for (i = 0; i < MD5_DIGEST_LENGTH; i++)
-    {
-        printf("%02x", md[i]);
-    }
+    free(request);
+    free(response);
+    exit(EXIT_FAILURE);
 }

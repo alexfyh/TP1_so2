@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
                         strncpy(response->first_argument,ep->d_name,ARGUMENT_SIZE);
                         char str_file_size[ARGUMENT_SIZE];
                         strncpy(response->second_argument,readable_fs(file_size,str_file_size),ARGUMENT_SIZE);
+                        memcpy(response->third_argument,result,MD5_DIGEST_LENGTH);
                         write_mod(fd_write,response,sizeof(struct File_Response));
                         /*
                         printf("File name  =%s\n", ep->d_name);

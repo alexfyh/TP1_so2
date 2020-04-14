@@ -6,6 +6,7 @@
 #include <malloc.h>
 
 #include "server_definitions.h"
+#include "file_functions.h"
 
 #define LINE_SIZE 130
 const char *EXIT_CMD = "exit";
@@ -32,7 +33,7 @@ uint8_t getArgumentsCount(char *buffer)
 
 bool formatRequest(char *buffer, struct Server_Request *request)
 {
-    bool result;
+    bool result =false;
     char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
     strncpy(temp_buffer, buffer, LINE_SIZE);
     char *token = strtok_r(temp_buffer, " ", &temp_buffer);
@@ -115,7 +116,9 @@ void printResponse(struct Server_Response* response){
         printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
         break;
     case ServerResponse_FILE_CONTINUE:
-        printf("%10s  %10s\n",response->first_argument,response->second_argument);
+        printf("%10s  %10s    ",response->first_argument,response->second_argument);
+        print_md5_sum((unsigned char *)response->third_argument);
+        printf("\n");
         break;
     default:
         printf("%s\n","NOT DEFINED");

@@ -16,6 +16,7 @@
 
 #define MAX_CONNECTION 2
 #define MAX_TRY 3
+#define MD5_LENGTH 16
 
 int main(int argc, char *argv[])
 {
@@ -222,11 +223,12 @@ int main(int argc, char *argv[])
 							server_response->responseCode = ServerResponse_FILE_CONTINUE;
 							strncpy(server_response->first_argument,file_response->first_argument,ARGUMENT_SIZE);
 							strncpy(server_response->second_argument,file_response->second_argument,ARGUMENT_SIZE);
+							memcpy(server_response->third_argument,file_response->third_argument,MD5_LENGTH);
 							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 							read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
 						}
 						server_response->responseCode = ServerResponse_FILE_FINISH;
-						read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
+						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case ServerRequest_FILE_DOWNLOAD:
 						/* code */

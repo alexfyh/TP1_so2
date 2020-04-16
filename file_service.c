@@ -13,6 +13,11 @@
 #include "file_functions.h"
 #include "transactions.h"
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 #define ISO_PATH "isos"
 #define ARGUMENT_SIZE 32
 
@@ -67,12 +72,12 @@ int main(int argc, char *argv[])
             {
             case File_LIST:
                 dp = opendir(".");
-                if (dp==NULL)
+                if (dp == NULL)
                 {
                     perror("No se pudo acceder al directorio_larar");
                     response->code = File_FAIL;
                 }
-                while ((ep = readdir(dp))!=NULL)
+                while ((ep = readdir(dp)) != NULL)
                 {
                     if (ep->d_type == DT_REG)
                     {
@@ -94,11 +99,11 @@ int main(int argc, char *argv[])
                         MD5((unsigned char *)file_buffer, (uint64_t)file_size, result);
                         munmap(file_buffer, (uint64_t)file_size);
                         response->code = File_LIST_CONTINUE;
-                        strncpy(response->first_argument,ep->d_name,ARGUMENT_SIZE);
+                        strncpy(response->first_argument, ep->d_name, ARGUMENT_SIZE);
                         char str_file_size[ARGUMENT_SIZE];
-                        strncpy(response->second_argument,readable_fs(file_size,str_file_size),ARGUMENT_SIZE);
-                        memcpy(response->third_argument,result,MD5_DIGEST_LENGTH);
-                        write_mod(fd_write,response,sizeof(struct File_Response));
+                        strncpy(response->second_argument, readable_fs(file_size, str_file_size), ARGUMENT_SIZE);
+                        memcpy(response->third_argument, result, MD5_DIGEST_LENGTH);
+                        write_mod(fd_write, response, sizeof(struct File_Response));
                         /*
                         printf("File name  =%s\n", ep->d_name);
                         printf("File sieze =%ld\n", file_size);
@@ -109,10 +114,16 @@ int main(int argc, char *argv[])
                     }
                 }
                 response->code = File_LIST_FINISH;
-                write_mod(fd_write,response,sizeof(struct File_Response));
+                write_mod(fd_write, response, sizeof(struct File_Response));
                 closedir(dp);
                 break;
-            case File_DOWNLOAD:
+            case File_DOWNLOAD: ;
+                //printf("%s\n",request->second_argument);
+                uint16_t port = (uint16_t)atoi(request->second_argument);
+                int32_t file_socket = connect_client(request->first_argument,port);
+                printf("%d\n",atoi(request->second_argument));
+                //char file_buffer[100];
+                send(file_socket,"Hola",strlen("HOLA"),0);
                 break;
 
             default:

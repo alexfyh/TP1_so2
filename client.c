@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#include "transactions.h" 
+#include "transactions.h"
 #include "server_definitions.h"
 #include "client_functions.h"
 #include "state.h"
@@ -50,57 +50,73 @@ int main(int argc, char *argv[])
 	}
 	struct Server_Request *request = malloc(sizeof(struct Server_Request));
 	struct Server_Response *response = malloc(sizeof(struct Server_Response));
-	char user [ARGUMENT_SIZE]="";
-	char buffer[BUFFER_SIZE]="";
-	STATE state=LOGIN_STATE;
+	char user[ARGUMENT_SIZE] = "";
+	char buffer[BUFFER_SIZE] = "";
+	STATE state = LOGIN_STATE;
 	int32_t send_flags = 0;
 	int32_t recv_flags = 0;
-	
+
 	while (1)
 	{
 		switch (state)
 		{
 		case LOGIN_STATE:
 			printf("login:");
-			fgets(buffer,ARGUMENT_SIZE,stdin);
+			fgets(buffer, ARGUMENT_SIZE, stdin);
 			buffer[strcspn(buffer, "\n")] = 0;
-			strncpy(user,buffer,sizeof(user));
+			strncpy(user, buffer, sizeof(user));
 			printf("password:");
-			fgets(buffer,ARGUMENT_SIZE,stdin);
+			fgets(buffer, ARGUMENT_SIZE, stdin);
 			buffer[strcspn(buffer, "\n")] = 0;
-			strncpy(request->first_argument,user,ARGUMENT_SIZE);
-			strncpy(request->second_argument,buffer,ARGUMENT_SIZE);
-			request->requestCode=ServerRequest_LOGIN;
-			send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
-			recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
-			if (response->responseCode==ServerResponse_LOGIN_SUCCESS)
+			strncpy(request->first_argument, user, ARGUMENT_SIZE);
+			strncpy(request->second_argument, buffer, ARGUMENT_SIZE);
+			request->requestCode = ServerRequest_LOGIN;
+			send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
+			recv_mod(sockfd, response, sizeof(struct Server_Response), recv_flags);
+			if (response->responseCode == ServerResponse_LOGIN_SUCCESS)
 			{
 				printResponse(response);
-				state=EXECUTE_STATE;	
+				state = EXECUTE_STATE;
 			}
-			else if (response->responseCode==ServerResponse_LOGIN_REJECTED)
+			else if (response->responseCode == ServerResponse_LOGIN_REJECTED)
 			{
 				printResponse(response);
-				state=EXIT_STATE;
-			}	
+				state = EXIT_STATE;
+			}
 			break;
 		case EXECUTE_STATE:
-			printf("%s$",user);
+			printf("%s$", user);
 			fgets(buffer, BUFFER_SIZE, stdin);
-        	buffer[strcspn(buffer, "\n")] = 0;
-			if (formatRequest(buffer,request))
+			buffer[strcspn(buffer, "\n")] = 0;
+			if (formatRequest(buffer, request))
 			{
-				send_mod(sockfd,request,sizeof(struct Server_Request),send_flags);
+				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
+				{
+					struct sockaddr_in serv_addr, cli_addr;
+					//https://stackoverflow.com/questions/1075399/how-to-bind-to-any-available-port
+					// TODO = filtrar por dirección ip antes de bindear, ya sé la ip del server (no aceptar cualqueira)
+					int32_t file_sockfd = setUpConnection(&serv_addr, 0, 1);
+					snprintf(request->first_argument,ARGUMENT_SIZE,"%d",(uint16_t)htons(serv_addr.sin_port));
+					send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
+					int32_t file_newsockfd = acceptConnection(file_sockfd,(struct sockaddr *)&cli_addr);
+					char file_buffer[100] = {0};
+
+					recv_mod(file_newsockfd, file_buffer, 100, recv_flags);
+				}
+
+				send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
 				do
 				{
-					recv_mod(sockfd,response,sizeof(struct Server_Response),recv_flags);
+					recv_mod(sockfd, response, sizeof(struct Server_Response), recv_flags);
 					printResponse(response);
-				} while (response->responseCode==ServerResponse_CONTINUE || response->responseCode == ServerResponse_FILE_CONTINUE);
-				if(response->responseCode==ServerResponse_LOGOUT){
-					state=EXIT_STATE;
+				} while (response->responseCode == ServerResponse_CONTINUE || response->responseCode == ServerResponse_FILE_CONTINUE);
+				if (response->responseCode == ServerResponse_LOGOUT)
+				{
+					state = EXIT_STATE;
 				}
 			}
-			else{
+			else
+			{
 				printf("Command not found\n");
 			}
 			break;

@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/wait.h>
+#include <arpa/inet.h>
 
 #include "transactions.h"
 #include "server_definitions.h"
@@ -126,6 +127,8 @@ int main(int argc, char *argv[])
 		}
 		if (pid == 0)
 		{
+			getpeername(newsockfd,(struct sockaddr *)&cli_addr,&clilen);
+			printf("%s\n",inet_ntoa(cli_addr.sin_addr));
 			close(sockfd);
 			uint8_t trys = 0;
 			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER
@@ -216,6 +219,7 @@ int main(int argc, char *argv[])
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case ServerRequest_FILE_LIST:
+						file_request->code = File_LIST;
 						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
 						read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
 						while (file_response->code == File_LIST_CONTINUE)
@@ -231,7 +235,13 @@ int main(int argc, char *argv[])
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case ServerRequest_FILE_DOWNLOAD:
-						/* code */
+						fprintf(stdout, "FILE DOWN\n");
+						file_request->code = File_DOWNLOAD;
+						//char * client_address = inet_ntoa(cli_addr.sin_addr);
+						strncpy(file_request->first_argument,inet_ntoa(cli_addr.sin_addr),ARGUMENT_SIZE);
+						strncpy(file_request->second_argument,server_request->first_argument,ARGUMENT_SIZE);
+						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
+						printf("Direccion ip%s\n",inet_ntoa(cli_addr.sin_addr));
 						break;
 					case ServerRequest_LOGOUT:
 						state = EXIT_STATE;

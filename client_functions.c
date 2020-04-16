@@ -9,11 +9,13 @@
 #include "file_functions.h"
 
 #define LINE_SIZE 130
+//TODO = usar DEFINE en vez de const char 
 const char *EXIT_CMD = "exit";
 const char *LS_CMD = "ls";
 const char *USER_CMD = "user";
 const char *PASSWD_CMD = "passwd";
 const char *FILE_CMD = "file";
+const char *DOWN_CMD = "down";
 #define PRIu32 "u"
 
 uint8_t getArgumentsCount(char *buffer)
@@ -37,6 +39,9 @@ bool formatRequest(char *buffer, struct Server_Request *request)
     char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
     strncpy(temp_buffer, buffer, LINE_SIZE);
     char *token = strtok_r(temp_buffer, " ", &temp_buffer);
+    if(token==NULL){
+        return false;
+    }
     printf("Primer argumento= %s\n", token);
     uint8_t cant_argumentos = getArgumentsCount(buffer);
     if (cant_argumentos == 1 && strlen(token) == strlen(EXIT_CMD) && !strncmp(token, EXIT_CMD, strlen(EXIT_CMD)))
@@ -63,10 +68,6 @@ bool formatRequest(char *buffer, struct Server_Request *request)
             strncpy(request->first_argument, token, strnlen(token, ARGUMENT_SIZE));
             result = true;
         }
-        else
-        {
-            result = false;
-        }
     }
     else if (!strncmp(token, FILE_CMD, strlen(FILE_CMD)))
     {
@@ -78,11 +79,18 @@ bool formatRequest(char *buffer, struct Server_Request *request)
             request->requestCode = ServerRequest_FILE_LIST;
             result = true;
         }
-        /*TODO = FILE DOWNLOAD*/
-    }
-    else
-    {
-        result = false;
+        else if (/*cant arg ??*/ strlen(token) == strlen(DOWN_CMD) && !strncmp(token,DOWN_CMD,strlen(DOWN_CMD)))
+        {
+            printf("FILE DOWNLOAD\n");
+            request->requestCode = ServerRequest_FILE_DOWNLOAD;
+            result = true;
+            /*
+            Definir acá qué se debe completar en la solicitud y qué para quedarse en el servidor.
+            Creo que con mandarle a la solicitud el puerto y el nombre basta.
+            El servidor debe tener la ip del usuario que la pide
+            */
+        }
+        
     }
     //free(temp_buffer);
     return result;

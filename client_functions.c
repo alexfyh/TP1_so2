@@ -33,7 +33,7 @@ uint8_t getArgumentsCount(char *buffer)
     return count;
 }
 
-bool formatRequest(char *buffer, struct Server_Request *request)
+bool formatRequest(char *buffer, struct Server_Request *request, char *image_name)
 {
     bool result =false;
     char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
@@ -83,6 +83,8 @@ bool formatRequest(char *buffer, struct Server_Request *request)
         {
             printf("FILE DOWNLOAD\n");
             request->requestCode = ServerRequest_FILE_DOWNLOAD;
+            token = strtok_r(temp_buffer, " ", &temp_buffer);
+            snprintf(image_name,ARGUMENT_SIZE,"%s",token);
             result = true;
             /*
             Definir acá qué se debe completar en la solicitud y qué para quedarse en el servidor.
@@ -124,7 +126,7 @@ void printResponse(struct Server_Response* response){
         printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
         break;
     case ServerResponse_FILE_CONTINUE:
-        printf("%10s  %10s    ",response->first_argument,response->second_argument);
+        printf("%32s  %10s  --- ",response->first_argument,response->second_argument);
         print_md5_sum((unsigned char *)response->third_argument);
         printf("\n");
         break;

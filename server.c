@@ -235,13 +235,13 @@ int main(int argc, char *argv[])
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					case ServerRequest_FILE_DOWNLOAD:
-						fprintf(stdout, "FILE DOWN\n");
 						file_request->code = File_DOWNLOAD;
-						//char * client_address = inet_ntoa(cli_addr.sin_addr);
 						strncpy(file_request->first_argument,inet_ntoa(cli_addr.sin_addr),ARGUMENT_SIZE);
 						strncpy(file_request->second_argument,server_request->first_argument,ARGUMENT_SIZE);
+						strncpy(file_request->third_argument,server_request->second_argument,ARGUMENT_SIZE);
 						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
-						printf("Direccion ip%s\n",inet_ntoa(cli_addr.sin_addr));
+						//strncpy(file_request->first_argument,server_request->second_argument,ARGUMENT_SIZE);
+						//write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
 						break;
 					case ServerRequest_LOGOUT:
 						state = EXIT_STATE;

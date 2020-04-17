@@ -21,6 +21,7 @@ typedef struct File_Request
     File_Request_Code code;
     char first_argument[ARGUMENT_SIZE];
     char second_argument[ARGUMENT_SIZE];
+    char third_argument[ARGUMENT_SIZE];
 } File_Request;
 
 typedef struct File_Response

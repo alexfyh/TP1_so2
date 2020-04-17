@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "transactions.h"
 #include "server_definitions.h"
@@ -52,6 +53,7 @@ int main(int argc, char *argv[])
 	struct Server_Response *response = malloc(sizeof(struct Server_Response));
 	char user[ARGUMENT_SIZE] = "";
 	char buffer[BUFFER_SIZE] = "";
+	char image_name [ARGUMENT_SIZE] = "";
 	STATE state = LOGIN_STATE;
 	int32_t send_flags = 0;
 	int32_t recv_flags = 0;
@@ -88,7 +90,7 @@ int main(int argc, char *argv[])
 			printf("%s$", user);
 			fgets(buffer, BUFFER_SIZE, stdin);
 			buffer[strcspn(buffer, "\n")] = 0;
-			if (formatRequest(buffer, request))
+			if (formatRequest(buffer, request,image_name))
 			{
 				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
 				{
@@ -97,11 +99,30 @@ int main(int argc, char *argv[])
 					// TODO = filtrar por dirección ip antes de bindear, ya sé la ip del server (no aceptar cualqueira)
 					int32_t file_sockfd = setUpConnection(&serv_addr, 0, 1);
 					snprintf(request->first_argument,ARGUMENT_SIZE,"%d",(uint16_t)htons(serv_addr.sin_port));
+					snprintf(request->second_argument,ARGUMENT_SIZE,"%s",image_name);
 					send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
 					int32_t file_newsockfd = acceptConnection(file_sockfd,(struct sockaddr *)&cli_addr);
-					char file_buffer[100] = {0};
+					
+					char file_buffer[200] = {0};
+					int32_t downloaded = open("descargado",O_WRONLY | O_CREAT);
+					printf("%d\n",downloaded);
+					ssize_t bytes_recv;
+					do
+					{
+						bytes_recv = recv(file_newsockfd, file_buffer, sizeof(file_buffer), 0);
+						if (bytes_recv<=0)
+						{
+							perror("Error en descarga");
+						}
+						write(downloaded,file_buffer,(size_t)bytes_recv);	
+					} while (bytes_recv>0);
+					close(downloaded);
+					close(file_sockfd);
+					
 
+					//int32_t imagen = open("imagen",O_WRONLY | O_CREAT);
 					recv_mod(file_newsockfd, file_buffer, 100, recv_flags);
+					printf("%s\n",file_buffer);
 				}
 
 				send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);

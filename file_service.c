@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/sendfile.h>
 
 #include "file_functions.h"
 #include "transactions.h"
@@ -104,13 +105,6 @@ int main(int argc, char *argv[])
                         strncpy(response->second_argument, readable_fs(file_size, str_file_size), ARGUMENT_SIZE);
                         memcpy(response->third_argument, result, MD5_DIGEST_LENGTH);
                         write_mod(fd_write, response, sizeof(struct File_Response));
-                        /*
-                        printf("File name  =%s\n", ep->d_name);
-                        printf("File sieze =%ld\n", file_size);
-                        printf("Hash = ");
-                        print_md5_sum(result);
-                        printf("\n%s\n", result);
-                        */
                     }
                 }
                 response->code = File_LIST_FINISH;
@@ -121,9 +115,12 @@ int main(int argc, char *argv[])
                 //printf("%s\n",request->second_argument);
                 uint16_t port = (uint16_t)atoi(request->second_argument);
                 int32_t file_socket = connect_client(request->first_argument,port);
-                printf("%d\n",atoi(request->second_argument));
-                //char file_buffer[100];
-                send(file_socket,"Hola",strlen("HOLA"),0);
+                int32_t booteable_fd = open(request->third_argument,O_RDONLY);
+                struct stat stat_buf;
+                fstat(booteable_fd,&stat_buf);
+                sendfile (file_socket, booteable_fd, NULL,(uint64_t) stat_buf.st_size);
+                close(booteable_fd);
+                close(file_socket);
                 break;
 
             default:

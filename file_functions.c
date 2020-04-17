@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <stdio.h>
+#include "file_functions.h"
 
 int64_t get_size_by_fd(int fd)
 {

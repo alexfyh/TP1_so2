@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
         //  TODO = debería avisar al ppid que fallo y finalizarlo
         exit(EXIT_FAILURE);
     }
-    struct File_Request *request = calloc(1, sizeof(struct File_Request));
-    struct File_Response *response = calloc(1, sizeof(struct File_Response));
+    struct File_Request *request = (struct File_Request *) calloc(1, sizeof(struct File_Request));
+    struct File_Response *response = (struct File_Response *) calloc(1, sizeof(struct File_Response));
     ssize_t n;
     DIR *dp;
     struct dirent *ep;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
             {
             case File_LIST:
                 dp = opendir(".");
-                if (dp == NULL)
+                if (!dp)
                 {
                     perror("No se pudo acceder al directorio_larar");
                     response->code = File_FAIL;
@@ -113,18 +113,15 @@ int main(int argc, char *argv[])
                 break;
             case File_DOWNLOAD: ;
                 //printf("%s\n",request->second_argument);
-                uint16_t port = (uint16_t)atoi(request->second_argument);
-                int32_t file_socket = connect_client(request->first_argument,port);
+                //uint16_t port = (uint16_t)atoi(request->second_argument);
+                int32_t file_socket = connectToServer(request->first_argument,request->second_argument);
+                //TODO =  Manejo de errores del descitpr
                 int32_t booteable_fd = open(request->third_argument,O_RDONLY);
                 struct stat stat_buf;
                 fstat(booteable_fd,&stat_buf);
                 sendfile (file_socket, booteable_fd, NULL,(uint64_t) stat_buf.st_size);
                 close(booteable_fd);
                 close(file_socket);
-                break;
-
-            default:
-                response->code = File_FAIL;
                 break;
             }
         }

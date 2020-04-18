@@ -18,108 +18,46 @@
 #define MAX_CONNECTION 2
 #define MAX_TRY 3
 #define MD5_LENGTH 16
+#define FD_STRING_LENGTH 12
+static const char *file_service = "file_service";
+static const char *auth_service = "auth_service";
 
+void createChildProccess(int[], int[], const char *);
+/**
+ * @brief servidor principal
+ * 
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char *argv[])
 {
-	//	INICIO - Comunicacion con Auth_Service
-	int Auth_fd_1[2];
-	int Auth_fd_2[2];
-	if (pipe(Auth_fd_1) || pipe(Auth_fd_2))
-	{
-		perror("Authorization pipe failed");
-	}
-	pid_t Auth_pid = fork();
-	if (Auth_pid == -1)
-	{
-		perror("Authorization Fork Failed");
-		exit(EXIT_FAILURE);
-	}
-	if (!Auth_pid)
-	{
-		char str_fd_read[12];
-		char str_fd_write[12];
-		sprintf(str_fd_read, "%d", Auth_fd_1[0]);
-		sprintf(str_fd_write, "%d", Auth_fd_2[1]);
-		if (execl("auth_service", "auth_service", str_fd_read, str_fd_write, NULL) == -1)
-		{
-			perror("Inicio de Auth_service fallo");
-			//TODO = CERRAR TODOS LOS FDs tanto tanto de Auth como File
-			exit(EXIT_FAILURE);
-		}
-	}
-	//	FIN - Comunicacion con Auth_service
-
-	//	INICIO - Comunicacion con File_Service
-	int File_fd_1[2];
-	int File_fd_2[2];
-	if (pipe(File_fd_1) || pipe(File_fd_2))
-	{
-		perror("File pipe failed");
-	}
-	pid_t File_pid = fork();
-	if (File_pid == -1)
-	{
-		perror("File Fork Failed");
-		exit(EXIT_FAILURE);
-	}
-	if (!File_pid)
-	{
-		char str_fd_read[12];
-		char str_fd_write[12];
-		sprintf(str_fd_read, "%d", File_fd_1[0]);
-		sprintf(str_fd_write, "%d", File_fd_2[1]);
-		if (execl("file_service", "file_service", str_fd_read, str_fd_write, NULL) == -1)
-		{
-			perror("Inicio de File_service fallo");
-			//TODO = CERRAR TODOS LOS FDs tanto tanto de Auth como File
-			exit(EXIT_FAILURE);
-		}
-	}
-	//	FIN - Comunicacion con File_service
-
-	// MAX PID en 64-bit 2^22
-	int32_t sockfd, newsockfd, pid;
-	uint32_t clilen;
-	uint16_t puerto;
-	struct sockaddr_in serv_addr, cli_addr;
-
 	if (argc < 2)
 	{
 		fprintf(stderr, "Uso: %s <puerto>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0)
-	{
-		perror(" apertura de socket ");
-		exit(EXIT_FAILURE);
-	}
-	memset((char *)&serv_addr, 0, sizeof(serv_addr));
-	puerto = (uint16_t)((unsigned int)atoi(argv[1]));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(puerto);
-	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	{
-		perror("ligadura");
-		exit(EXIT_FAILURE);
-	}
-	printf("Proceso: %d - socket disponible: %d\n", getpid(), ntohs(serv_addr.sin_port));
-	if (listen(sockfd, MAX_CONNECTION))
-	{
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
+	int32_t Auth_fd_1[2];
+	int32_t Auth_fd_2[2];
+	createChildProccess(Auth_fd_1, Auth_fd_2, auth_service);
+
+	int32_t File_fd_1[2];
+	int32_t File_fd_2[2];
+	createChildProccess(File_fd_1, File_fd_2, file_service);
+
+	struct sockaddr_in serv_addr, cli_addr;
+	int32_t sockfd = setUpConnection(&serv_addr,argv[1],1);
+	uint32_t clilen;
 	clilen = sizeof(cli_addr);
 	while (1)
 	{
-		newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+		int32_t newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
 		if (newsockfd < 0)
 		{
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
-		pid = fork();
+		int32_t pid = fork();
 		if (pid < 0)
 		{
 			perror("fork");
@@ -127,18 +65,18 @@ int main(int argc, char *argv[])
 		}
 		if (pid == 0)
 		{
-			getpeername(newsockfd,(struct sockaddr *)&cli_addr,&clilen);
-			printf("%s\n",inet_ntoa(cli_addr.sin_addr));
+			getpeername(newsockfd, (struct sockaddr *)&cli_addr, &clilen);
+			printf("%s\n", inet_ntoa(cli_addr.sin_addr));
 			close(sockfd);
 			uint8_t trys = 0;
 			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER
 			STATE state = LOGIN_STATE;
-			struct Server_Request *server_request = calloc(1,sizeof(struct Server_Request));
-			struct Server_Response *server_response = calloc(1,sizeof(struct Server_Response));
-			struct Auth_Request *auth_request = calloc(1,sizeof(struct Auth_Request));
-			struct Auth_Response *auth_response = calloc(1,sizeof(struct Auth_Response));
-			struct File_Request *file_request = calloc(1,sizeof(struct File_Request));
-			struct File_Response *file_response = calloc(1,sizeof(struct File_Response));
+			struct Server_Request *server_request = (struct Server_Request *)calloc(1, sizeof(struct Server_Request));
+			struct Server_Response *server_response = (struct Server_Response *)calloc(1, sizeof(struct Server_Response));
+			struct Auth_Request *auth_request = (struct Auth_Request *)calloc(1, sizeof(struct Auth_Request));
+			struct Auth_Response *auth_response = (struct Auth_Response *)calloc(1, sizeof(struct Auth_Response));
+			struct File_Request *file_request = (struct File_Request *)calloc(1, sizeof(struct File_Request));
+			struct File_Response *file_response = (struct File_Response *)calloc(1, sizeof(struct File_Response));
 			char user[ARGUMENT_SIZE] = {0};
 			while (1)
 			{
@@ -210,7 +148,6 @@ int main(int argc, char *argv[])
 							strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
 							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 							read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
-							
 						}
 						server_response->responseCode = ServerResponse_FINISH;
 						strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
@@ -225,9 +162,9 @@ int main(int argc, char *argv[])
 						while (file_response->code == File_LIST_CONTINUE)
 						{
 							server_response->responseCode = ServerResponse_FILE_CONTINUE;
-							strncpy(server_response->first_argument,file_response->first_argument,ARGUMENT_SIZE);
-							strncpy(server_response->second_argument,file_response->second_argument,ARGUMENT_SIZE);
-							memcpy(server_response->third_argument,file_response->third_argument,MD5_LENGTH);
+							strncpy(server_response->first_argument, file_response->first_argument, ARGUMENT_SIZE);
+							strncpy(server_response->second_argument, file_response->second_argument, ARGUMENT_SIZE);
+							memcpy(server_response->third_argument, file_response->third_argument, MD5_LENGTH);
 							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 							read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
 						}
@@ -236,9 +173,9 @@ int main(int argc, char *argv[])
 						break;
 					case ServerRequest_FILE_DOWNLOAD:
 						file_request->code = File_DOWNLOAD;
-						strncpy(file_request->first_argument,inet_ntoa(cli_addr.sin_addr),ARGUMENT_SIZE);
-						strncpy(file_request->second_argument,server_request->first_argument,ARGUMENT_SIZE);
-						strncpy(file_request->third_argument,server_request->second_argument,ARGUMENT_SIZE);
+						strncpy(file_request->first_argument, inet_ntoa(cli_addr.sin_addr), ARGUMENT_SIZE);
+						strncpy(file_request->second_argument, server_request->first_argument, ARGUMENT_SIZE);
+						strncpy(file_request->third_argument, server_request->second_argument, ARGUMENT_SIZE);
 						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
 						//strncpy(file_request->first_argument,server_request->second_argument,ARGUMENT_SIZE);
 						//write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
@@ -259,25 +196,41 @@ int main(int argc, char *argv[])
 					//close(Auth_fd_2[0]);
 					close(newsockfd);
 					exit(EXIT_SUCCESS);
-					break;
-				default:
-					close(newsockfd);
-					exit(EXIT_FAILURE);
-					break;
 				}
 			}
 		}
 		else
 		{
-			wait(0);
-			//printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
+			wait(NULL);
 			close(newsockfd);
 		}
 	}
-
-	return 0;
 }
 
-//int setUp_comunnication(int fd_1[], int fd_2 [],char * arguments[]);
-
-//gcc -o server transactions.c server_definitions.h auth_definitions.h  server.c
+void createChildProccess(int file_descriptor_1[2], int file_descriptor_2[2], const char *executable)
+{
+	if (pipe(file_descriptor_1) || pipe(file_descriptor_2))
+	{
+		perror("Pipe failed");
+		exit(EXIT_FAILURE);
+	}
+	pid_t pid = fork();
+	if (pid == -1)
+	{
+		perror("Fork Failed");
+		exit(EXIT_FAILURE);
+	}
+	if (!pid)
+	{
+		char str_fd_read[FD_STRING_LENGTH];
+		char str_fd_write[FD_STRING_LENGTH];
+		snprintf(str_fd_read, FD_STRING_LENGTH, "%d", file_descriptor_1[0]);
+		snprintf(str_fd_write, FD_STRING_LENGTH, "%d", file_descriptor_2[1]);
+		if (execl(executable, executable, str_fd_read, str_fd_write, NULL) == -1)
+		{
+			perror("Inicio del servicio  auxiliar fallo");
+			exit(EXIT_FAILURE);
+		}
+	}
+	return;
+}

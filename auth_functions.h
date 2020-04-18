@@ -1,15 +1,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define FIELD_SIZE      32
-#define ARGUMENT_SIZE   32
+#define FIELD_SIZE 32
+#define ARGUMENT_SIZE 32
 
 typedef struct UserInfo
 {
     char name[FIELD_SIZE];
     char enabled[FIELD_SIZE];
     char date[FIELD_SIZE];
-}UserInfo;
+} UserInfo;
 
 typedef enum
 {
@@ -42,7 +42,7 @@ typedef struct Auth_Response
     char third_argument[ARGUMENT_SIZE];
 } Auth_Response;
 
-bool isAuthorized(char *,char *);
-bool setUserPassword(char *,char *);
+bool isAuthorized(char *, char *);
+bool setUserPassword(char *, char *);
 uint32_t getUsersCount();
 struct UserInfo getUserInfoByRowNumber(uint32_t);

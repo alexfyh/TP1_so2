@@ -16,44 +16,18 @@
 #define BUFFER_SIZE 120
 
 int main(int argc, char *argv[])
-{
-	int32_t sockfd;
-	struct sockaddr_in serv_addr;
-	struct hostent *server;
-	uint16_t puerto;
+{	
 	if (argc < 3)
 	{
 		fprintf(stderr, "Uso %s host puerto\n", argv[0]);
 		exit(EXIT_SUCCESS);
 	}
-	puerto = (uint16_t)((unsigned int)atoi(argv[2]));
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0)
-	{
-		perror("ERROR apertura de socket");
-		exit(EXIT_FAILURE);
-	}
-
-	server = gethostbyname(argv[1]);
-	if (server == NULL)
-	{
-		fprintf(stderr, "Error, no existe el host\n");
-		exit(EXIT_SUCCESS);
-	}
-	memset((char *)&serv_addr, '0', sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, (uint32_t)server->h_length);
-	serv_addr.sin_port = htons(puerto);
-	if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	{
-		perror("conexion");
-		exit(EXIT_FAILURE);
-	}
-	struct Server_Request *request = malloc(sizeof(struct Server_Request));
-	struct Server_Response *response = malloc(sizeof(struct Server_Response));
+	int32_t sockfd = connectToServer(argv[1],argv[2]);
+	struct Server_Request *request = (struct Server_Request *)calloc(1, sizeof(struct Server_Request));
+	struct Server_Response *response = (struct Server_Response *)calloc(1, sizeof(struct Server_Response));
 	char user[ARGUMENT_SIZE] = "";
 	char buffer[BUFFER_SIZE] = "";
-	char image_name [ARGUMENT_SIZE] = "";
+	char image_name[ARGUMENT_SIZE] = "";
 	STATE state = LOGIN_STATE;
 	int32_t send_flags = 0;
 	int32_t recv_flags = 0;
@@ -63,6 +37,7 @@ int main(int argc, char *argv[])
 		switch (state)
 		{
 		case LOGIN_STATE:
+		{
 			printf("login:");
 			fgets(buffer, ARGUMENT_SIZE, stdin);
 			buffer[strcspn(buffer, "\n")] = 0;
@@ -86,43 +61,45 @@ int main(int argc, char *argv[])
 				state = EXIT_STATE;
 			}
 			break;
+		}
 		case EXECUTE_STATE:
+		{
 			printf("%s$", user);
 			fgets(buffer, BUFFER_SIZE, stdin);
 			buffer[strcspn(buffer, "\n")] = 0;
-			if (formatRequest(buffer, request,image_name))
+			if (formatRequest(buffer, request, image_name))
 			{
 				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
 				{
-					struct sockaddr_in serv_addr, cli_addr;
+					struct sockaddr_in serv_addr,cli_addr;
 					//https://stackoverflow.com/questions/1075399/how-to-bind-to-any-available-port
 					// TODO = filtrar por dirección ip antes de bindear, ya sé la ip del server (no aceptar cualqueira)
 					int32_t file_sockfd = setUpConnection(&serv_addr, 0, 1);
-					snprintf(request->first_argument,ARGUMENT_SIZE,"%d",(uint16_t)htons(serv_addr.sin_port));
-					snprintf(request->second_argument,ARGUMENT_SIZE,"%s",image_name);
+					snprintf(request->first_argument, ARGUMENT_SIZE, "%d", (uint16_t)htons(serv_addr.sin_port));
+					snprintf(request->second_argument, ARGUMENT_SIZE, "%s", image_name);
 					send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
-					int32_t file_newsockfd = acceptConnection(file_sockfd,(struct sockaddr *)&cli_addr);
-					
+					int32_t file_newsockfd = acceptConnection(file_sockfd, (struct sockaddr *)&cli_addr);
+
 					char file_buffer[200] = {0};
-					int32_t downloaded = open("descargado",O_WRONLY | O_CREAT);
-					printf("%d\n",downloaded);
+					//http://codewiki.wikidot.com/c:system-calls:open
+					int32_t downloaded = open("descargado", O_WRONLY | O_CREAT);
+					printf("%d\n", downloaded);
 					ssize_t bytes_recv;
 					do
 					{
 						bytes_recv = recv(file_newsockfd, file_buffer, sizeof(file_buffer), 0);
-						if (bytes_recv<=0)
+						if (bytes_recv <= 0)
 						{
 							perror("Error en descarga");
 						}
-						write(downloaded,file_buffer,(size_t)bytes_recv);	
-					} while (bytes_recv>0);
+						write(downloaded, file_buffer, (size_t)bytes_recv);
+					} while (bytes_recv > 0);
 					close(downloaded);
 					close(file_sockfd);
-					
 
 					//int32_t imagen = open("imagen",O_WRONLY | O_CREAT);
 					recv_mod(file_newsockfd, file_buffer, 100, recv_flags);
-					printf("%s\n",file_buffer);
+					printf("%s\n", file_buffer);
 				}
 
 				send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
@@ -141,23 +118,19 @@ int main(int argc, char *argv[])
 				printf("Command not found\n");
 			}
 			break;
+		}
 		case EXIT_STATE:
+		{
 			close(sockfd);
 			free(request);
 			free(response);
 			exit(EXIT_SUCCESS);
-			break;
-		default:
-			perror("Estado no determinado...????");
-			free(request);
-			free(response);
-			close(sockfd);
-			exit(EXIT_FAILURE);
-			break;
+		}
 		}
 	}
-	return 0;
 }
 
 
-//gcc -o client server_definitions.h state.h  transactions.c client.c
+//https://gist.github.com/aspyct/3462238
+//https://www.geeksforgeeks.org/signals-c-language/
+

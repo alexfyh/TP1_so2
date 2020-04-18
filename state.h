@@ -1,6 +1,5 @@
 typedef enum{
     LOGIN_STATE,
     EXECUTE_STATE,
-    DENIED_STATE,
     EXIT_STATE
 } STATE;

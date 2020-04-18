@@ -15,7 +15,7 @@
 #include "auth_functions.h"
 #include "file_functions.h"
 
-#define MAX_CONNECTION 2
+#define MAX_CONNECTION 1
 #define MAX_TRY 3
 #define MD5_LENGTH 16
 #define FD_STRING_LENGTH 12
@@ -23,12 +23,12 @@ static const char *file_service = "file_service";
 static const char *auth_service = "auth_service";
 
 void createChildProccess(int[], int[], const char *);
+
 /**
- * @brief servidor principal
+ * @brief Servidor principal, que crea los servicios de autorización y archivos.
+ * Se maneja por una máquina de estados
  * 
- * @param argc 
- * @param argv 
- * @return int 
+ * Primer argumento = nro de puerto
  */
 int main(int argc, char *argv[])
 {
@@ -46,17 +46,12 @@ int main(int argc, char *argv[])
 	createChildProccess(File_fd_1, File_fd_2, file_service);
 
 	struct sockaddr_in serv_addr, cli_addr;
-	int32_t sockfd = setUpConnection(&serv_addr,argv[1],1);
+	int32_t sockfd = setUpConnection(&serv_addr, argv[1], MAX_CONNECTION);
 	uint32_t clilen;
 	clilen = sizeof(cli_addr);
 	while (1)
 	{
-		int32_t newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-		if (newsockfd < 0)
-		{
-			perror("accept");
-			exit(EXIT_FAILURE);
-		}
+		int32_t newsockfd = acceptConnection(sockfd, (struct sockaddr *)&cli_addr);
 		int32_t pid = fork();
 		if (pid < 0)
 		{
@@ -66,7 +61,6 @@ int main(int argc, char *argv[])
 		if (pid == 0)
 		{
 			getpeername(newsockfd, (struct sockaddr *)&cli_addr, &clilen);
-			printf("%s\n", inet_ntoa(cli_addr.sin_addr));
 			close(sockfd);
 			uint8_t trys = 0;
 			//	TODO = Renombrar ARGUMENT SIZE de  AUTH y SERVER
@@ -83,6 +77,7 @@ int main(int argc, char *argv[])
 				switch (state)
 				{
 				case LOGIN_STATE:
+				{
 					if (trys >= MAX_TRY)
 					{
 						state = EXIT_STATE;
@@ -91,15 +86,14 @@ int main(int argc, char *argv[])
 					fprintf(stdout, "LOGIN STATE\n");
 					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
 					auth_request->code = Auth_LOGIN;
-					strncpy(auth_request->first_argument, server_request->first_argument, ARGUMENT_SIZE);
-					strncpy(auth_request->second_argument, server_request->second_argument, ARGUMENT_SIZE);
+					snprintf(auth_request->first_argument, ARGUMENT_SIZE, "%s", server_request->first_argument);
+					snprintf(auth_request->second_argument, ARGUMENT_SIZE, "%s", server_request->second_argument);
 					write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 					read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
 					if (auth_response->code == Auth_SUCCESS)
 					{
-						strncpy(user, server_request->first_argument, ARGUMENT_SIZE);
 						server_response->responseCode = ServerResponse_LOGIN_SUCCESS;
-						strncpy(server_response->first_argument, "LOGIN SUCCESSFUL\n", ARGUMENT_SIZE);
+						snprintf(user, ARGUMENT_SIZE, "%s", server_request->first_argument);
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						state = EXECUTE_STATE;
 						continue;
@@ -114,18 +108,20 @@ int main(int argc, char *argv[])
 					}
 					send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 					break;
+				}
 				case EXECUTE_STATE:
+				{
 					fprintf(stdout, "EXECUTE STATE\n");
 					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
 					switch (server_request->requestCode)
 					{
 					case ServerRequest_PASSWD:
+					{
 						auth_request->code = Auth_PASSWD;
-						strncpy(auth_request->first_argument, user, ARGUMENT_SIZE);
-						strncpy(auth_request->second_argument, server_request->first_argument, ARGUMENT_SIZE);
+						snprintf(auth_request->first_argument, ARGUMENT_SIZE, "%s", user);
+						snprintf(auth_request->second_argument, ARGUMENT_SIZE, "%s", server_request->first_argument);
 						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
-						//fprintf(stdout,"Resultado del cambio de contrasena%s\n%s\n",server_request->first_argument,server_request->second_argument);
 						if (auth_response->code == Auth_SUCCESS)
 						{
 							server_response->responseCode = ServerResponse_PASSWD_SUCCESS;
@@ -136,34 +132,38 @@ int main(int argc, char *argv[])
 						}
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
+					}
 					case ServerRequest_USER_LIST:
+					{
 						auth_request->code = Auth_LIST;
 						write_mod(Auth_fd_1[1], auth_request, sizeof(struct Auth_Request));
 						read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
 						while (auth_response->code == Auth_CONTINUE)
 						{
 							server_response->responseCode = ServerResponse_CONTINUE;
-							strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
-							strncpy(server_response->second_argument, auth_response->second_argument, ARGUMENT_SIZE);
-							strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
+							snprintf(server_response->first_argument, ARGUMENT_SIZE, "%s", auth_response->first_argument);
+							snprintf(server_response->second_argument, ARGUMENT_SIZE, "%s", auth_response->second_argument);
+							snprintf(server_response->third_argument, ARGUMENT_SIZE, "%s", auth_response->third_argument);
 							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 							read_mod(Auth_fd_2[0], auth_response, sizeof(struct Auth_Response));
 						}
 						server_response->responseCode = ServerResponse_FINISH;
-						strncpy(server_response->first_argument, auth_response->first_argument, ARGUMENT_SIZE);
-						strncpy(server_response->second_argument, auth_response->second_argument, ARGUMENT_SIZE);
-						strncpy(server_response->third_argument, auth_response->third_argument, ARGUMENT_SIZE);
+						snprintf(server_response->first_argument, ARGUMENT_SIZE, "%s", auth_response->first_argument);
+						snprintf(server_response->second_argument, ARGUMENT_SIZE, "%s", auth_response->second_argument);
+						snprintf(server_response->third_argument, ARGUMENT_SIZE, "%s", auth_response->third_argument);
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
+					}
 					case ServerRequest_FILE_LIST:
+					{
 						file_request->code = File_LIST;
 						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
 						read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
 						while (file_response->code == File_LIST_CONTINUE)
 						{
 							server_response->responseCode = ServerResponse_FILE_CONTINUE;
-							strncpy(server_response->first_argument, file_response->first_argument, ARGUMENT_SIZE);
-							strncpy(server_response->second_argument, file_response->second_argument, ARGUMENT_SIZE);
+							snprintf(server_response->first_argument, ARGUMENT_SIZE, "%s", file_response->first_argument);
+							snprintf(server_response->second_argument, ARGUMENT_SIZE, "%s", file_response->second_argument);
 							memcpy(server_response->third_argument, file_response->third_argument, MD5_LENGTH);
 							send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 							read_mod(File_fd_2[0], file_response, sizeof(struct File_Response));
@@ -171,42 +171,54 @@ int main(int argc, char *argv[])
 						server_response->responseCode = ServerResponse_FILE_FINISH;
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
+					}
 					case ServerRequest_FILE_DOWNLOAD:
+					{
 						file_request->code = File_DOWNLOAD;
-						strncpy(file_request->first_argument, inet_ntoa(cli_addr.sin_addr), ARGUMENT_SIZE);
-						strncpy(file_request->second_argument, server_request->first_argument, ARGUMENT_SIZE);
-						strncpy(file_request->third_argument, server_request->second_argument, ARGUMENT_SIZE);
+						snprintf(file_request->first_argument, ARGUMENT_SIZE, "%s", inet_ntoa(cli_addr.sin_addr));
+						snprintf(file_request->second_argument, ARGUMENT_SIZE, "%s", server_request->first_argument);
+						snprintf(file_request->third_argument, ARGUMENT_SIZE, "%s", server_request->second_argument);
 						write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
-						//strncpy(file_request->first_argument,server_request->second_argument,ARGUMENT_SIZE);
-						//write_mod(File_fd_1[1], file_request, sizeof(struct File_Request));
 						break;
+					}
 					case ServerRequest_LOGOUT:
+					{
 						state = EXIT_STATE;
 						server_response->responseCode = ServerResponse_LOGOUT;
 						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
+					}
 					default:
 						break;
 					}
-					//send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 					break;
+				}
 				case EXIT_STATE:
+				{
 					fprintf(stdout, "EXIT STATE\n");
-					//close(Auth_fd_1[1]);
-					//close(Auth_fd_2[0]);
 					close(newsockfd);
 					exit(EXIT_SUCCESS);
+				}
 				}
 			}
 		}
 		else
 		{
 			wait(NULL);
+			//Si la conexión con el cliente finalizó y no llego a elstado exit.???
 			close(newsockfd);
 		}
 	}
 }
 
+/**
+ * @brief Crea un proceso hijo, le asigna  correr un ejectuble y le pasa descriptores
+ * de archivo para comunicarse con él
+ *
+ * @param file_descriptor_1 fd_1[0] para que proceso hijo escuche,fd_1[1] para que proceso padre escriba
+ * @param file_descriptor_2 fd_2[0] para que proceso hijo escriba,fd_2[1] para que proceso padre escriba.
+ * @param executable Nombre del ejecutable,ubicado en el mismo directorio de trabajo.
+ */
 void createChildProccess(int file_descriptor_1[2], int file_descriptor_2[2], const char *executable)
 {
 	if (pipe(file_descriptor_1) || pipe(file_descriptor_2))

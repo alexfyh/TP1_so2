@@ -8,6 +8,7 @@
 //#include <signal.h>
 
 #include "auth_functions.h"
+#include "transactions.h"
 
 //static void exit_handler(void);
 
@@ -31,77 +32,62 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        ssize_t n;
-        n = read(fd_read, request, sizeof(struct Auth_Request));
-        if (n != sizeof(struct Auth_Request))
+        read_mod(fd_read, request, sizeof(struct Auth_Request));
+        switch (request->code)
         {
-            perror("No se ha leído la estructura correctamente");
-            response->code = Auth_FAIL;
+        case Auth_LOGIN:
+        {
+            if (isAuthorized(request->first_argument, request->second_argument))
+            {
+                response->code = Auth_SUCCESS;
+            }
+            else
+            {
+                response->code = Auth_FAIL;
+            }
+            break;
         }
-        else
+        case Auth_LIST:
         {
-            switch (request->code)
+            uint32_t usersCount = getUsersCount();
+            if (usersCount == 0)
             {
-            case Auth_LOGIN:
-            {
-                if (isAuthorized(request->first_argument, request->second_argument))
-                {
-                    response->code = Auth_SUCCESS;
-                }
-                else
-                {
-                    response->code = Auth_FAIL;
-                }
+                //Si se borraron los usuarios justo,sale del switch y envia error
+                response->code = Auth_LIST_FAIL;
                 break;
             }
-            case Auth_LIST:
+            uint32_t rowNumber = 0;
+            struct UserInfo userInfo;
+            for (rowNumber = 0; rowNumber < usersCount - 1; rowNumber++)
             {
-                uint32_t usersCount = getUsersCount();
-                if (usersCount == 0)
-                {
-                    //Si se borraron los usuarios justo,sale del switch y envia error
-                    response->code = Auth_LIST_FAIL;
-                    break;
-                }
-                uint32_t rowNumber = 0;
-                struct UserInfo userInfo;
-                for (rowNumber = 0; rowNumber < usersCount - 1; rowNumber++)
-                {
-                    userInfo = getUserInfoByRowNumber(rowNumber);
-                    strncpy(response->first_argument, userInfo.name, ARGUMENT_SIZE);
-                    strncpy(response->second_argument, userInfo.enabled, ARGUMENT_SIZE);
-                    strncpy(response->third_argument, userInfo.date, ARGUMENT_SIZE);
-                    response->code = Auth_CONTINUE;
-                    write(fd_write, response, sizeof(struct Auth_Response));
-                }
+                response->code = Auth_CONTINUE;
                 userInfo = getUserInfoByRowNumber(rowNumber);
-                strncpy(response->first_argument, userInfo.name, ARGUMENT_SIZE);
-                strncpy(response->second_argument, userInfo.enabled, ARGUMENT_SIZE);
-                strncpy(response->third_argument, userInfo.date, ARGUMENT_SIZE);
-                response->code = Auth_FINISH;
-                break;
+                snprintf(response->first_argument, ARGUMENT_SIZE, "%s", userInfo.name);
+                snprintf(response->second_argument, ARGUMENT_SIZE, "%s", userInfo.enabled);
+                snprintf(response->third_argument, ARGUMENT_SIZE, "%s", userInfo.date);
+                write(fd_write, response, sizeof(struct Auth_Response));
             }
-            case Auth_PASSWD:
-            {
-                if (setUserPassword(request->first_argument, request->second_argument))
-                {
-                    response->code = Auth_SUCCESS;
-                }
-                else
-                {
-                    response->code = Auth_FAIL;
-                }
-                break;
-            }
-            }
+            response->code = Auth_FINISH;
+            userInfo = getUserInfoByRowNumber(rowNumber);
+            snprintf(response->first_argument, ARGUMENT_SIZE, "%s", userInfo.name);
+            snprintf(response->second_argument, ARGUMENT_SIZE, "%s", userInfo.enabled);
+            snprintf(response->third_argument, ARGUMENT_SIZE, "%s", userInfo.date);
+            break;
         }
-        n = write(fd_write, response, sizeof(struct Auth_Response));
-        if (n != sizeof(struct Auth_Response))
+        case Auth_PASSWD:
         {
-            //  TODO = cómo se debería comportar teniendo en cuenta que
-            //  del otro lado se quedó colgado escuchando ???
-            perror("No se ha escrito  correctamente la respuesta");
+            if (setUserPassword(request->first_argument, request->second_argument))
+            {
+                response->code = Auth_SUCCESS;
+            }
+            else
+            {
+                response->code = Auth_FAIL;
+            }
+            break;
         }
+        }
+        write_mod(fd_write, response, sizeof(struct Auth_Response));
     }
 }
 

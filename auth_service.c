@@ -57,21 +57,27 @@ int main(int argc, char *argv[])
                 break;
             }
             uint32_t rowNumber = 0;
-            struct UserInfo userInfo;
+            struct UserInfo *userInfo;
             for (rowNumber = 0; rowNumber < usersCount - 1; rowNumber++)
             {
                 response->code = Auth_CONTINUE;
                 userInfo = getUserInfoByRowNumber(rowNumber);
-                snprintf(response->first_argument, ARGUMENT_SIZE, "%s", userInfo.name);
-                snprintf(response->second_argument, ARGUMENT_SIZE, "%s", userInfo.enabled);
-                snprintf(response->third_argument, ARGUMENT_SIZE, "%s", userInfo.date);
+                if (!userInfo)
+                {
+                    continue;
+                }
+                snprintf(response->first_argument, ARGUMENT_SIZE, "%s", userInfo->name);
+                snprintf(response->second_argument, ARGUMENT_SIZE, "%s", userInfo->enabled);
+                snprintf(response->third_argument, ARGUMENT_SIZE, "%s", userInfo->date);
                 write(fd_write, response, sizeof(struct Auth_Response));
             }
+            //TODO : ver forma de que la aserción de NULL meterlatmb acá
             response->code = Auth_FINISH;
             userInfo = getUserInfoByRowNumber(rowNumber);
-            snprintf(response->first_argument, ARGUMENT_SIZE, "%s", userInfo.name);
-            snprintf(response->second_argument, ARGUMENT_SIZE, "%s", userInfo.enabled);
-            snprintf(response->third_argument, ARGUMENT_SIZE, "%s", userInfo.date);
+            snprintf(response->first_argument, ARGUMENT_SIZE, "%s", userInfo->name);
+            snprintf(response->second_argument, ARGUMENT_SIZE, "%s", userInfo->enabled);
+            snprintf(response->third_argument, ARGUMENT_SIZE, "%s", userInfo->date);
+            free(userInfo);
             break;
         }
         case Auth_PASSWD:

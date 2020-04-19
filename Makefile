@@ -11,13 +11,13 @@ all: server auth_service file_service client
 server: server.o transactions.o
 	$(CC) -o server server.o transactions.o
 
-auth_service: auth_service.o auth_functions.o
-	$(CC) -o auth_service auth_service.o auth_functions.o
+auth_service: auth_service.o auth_functions.o transactions.o
+	$(CC) -o auth_service auth_service.o auth_functions.o transactions.o
 
 client: client.o transactions.o client_functions.o
 	$(CC) -o client client.o transactions.o client_functions.o file_functions.o
 
-file_service: file_service.o file_functions.o file_functions.o
+file_service: file_service.o file_functions.o file_functions.o transactions.o
 	$(CC) -o file_service file_service.o file_functions.o transactions.o -lcrypto -lssl
 
 #csv_handler: csv_handler.o

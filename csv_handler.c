@@ -1,8 +1,3 @@
-
-#define TITLE "CSV data manipulation"
-#define URL "http://rosettacode.org/wiki/CSV_data_manipulation"
-
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h> /* malloc...*/
 #include <string.h> /* strtok...*/
@@ -18,17 +13,25 @@
 typedef struct
 {
 	char *delim;
-	unsigned int rows;
-	unsigned int cols;
+	uint32_t rows;
+	uint32_t cols;
 	char **table;
 } CSV;
 
+int trim(char **);
+int csv_destroy(CSV *);
+CSV *csv_create(unsigned int, unsigned int);
+char *csv_get(CSV *, unsigned int, unsigned int);
+int csv_set(CSV *, unsigned int, unsigned int, char *);
+int csv_resize(CSV *, unsigned int , unsigned int );
+int csv_open(CSV *csv, const char *);
+int csv_save(CSV *csv, const char *);
 /** 
  * Utility function to trim whitespaces from left & right of a string
  */
 int trim(char **str)
 {
-	int trimmed;
+	int trimmed=0;
 	uint64_t n;
 	uint64_t len;
 
@@ -59,15 +62,15 @@ int trim(char **str)
  */
 int csv_destroy(CSV *csv)
 {
-	if (csv == NULL)
+	if (!csv)
 	{
 		return 0;
 	}
-	if (csv->table != NULL)
+	if (csv->table)
 	{
 		free(csv->table);
 	}
-	if (csv->delim != NULL)
+	if (csv->delim)
 	{
 		free(csv->delim);
 	}
@@ -82,13 +85,13 @@ CSV *csv_create(unsigned int cols, unsigned int rows)
 {
 	CSV *csv;
 
-	csv = malloc(sizeof(CSV));
+	csv = (CSV *) malloc(sizeof(CSV));
 	csv->rows = rows;
 	csv->cols = cols;
 	csv->delim = strdup(",");
 
-	csv->table = malloc(sizeof(char *) * cols * rows);
-	if (csv->table == NULL)
+	csv->table = (char **) malloc(sizeof(char *) * cols * rows);
+	if (!csv->table)
 	{
 		goto error;
 	}
@@ -123,30 +126,6 @@ int csv_set(CSV *csv, unsigned int col, unsigned int row, char *value)
 	return 0;
 }
 
-void csv_display(CSV *csv)
-{
-	uint32_t row, col;
-	char *content;
-	if ((csv->rows == 0) || (csv->cols == 0))
-	{
-		printf("[Empty table]\n");
-		return;
-	}
-
-	printf("\n[Table cols=%d rows=%d]\n", csv->cols, csv->rows);
-	for (row = 0; row < csv->rows; row++)
-	{
-		printf("[|");
-		for (col = 0; col < csv->cols; col++)
-		{
-			content = csv_get(csv, col, row);
-			printf("%s\t|", content);
-		}
-		printf("]\n");
-	}
-	printf("\n");
-}
-
 /**
  * Resize CSV table
  */
@@ -162,7 +141,7 @@ int csv_resize(CSV *old_csv, unsigned int new_cols, unsigned int new_rows)
 
 	/* Build a new (fake) csv */
 	new_csv = csv_create(new_cols, new_rows);
-	if (new_csv == NULL)
+	if (!new_csv)
 	{
 		goto error;
 	}
@@ -215,7 +194,7 @@ error:
 /**
  * Open CSV file and load its content into provided CSV structure
  **/
-int csv_open(CSV *csv, char *filename)
+int csv_open(CSV *csv, const char *filename)
 {
 	FILE *fp;
 	unsigned int m_rows;
@@ -225,7 +204,7 @@ int csv_open(CSV *csv, char *filename)
 	char *token;
 
 	fp = fopen(filename, "r");
-	if (fp == NULL)
+	if (!fp)
 	{
 		goto error;
 	}
@@ -265,7 +244,7 @@ error:
 /**
  * Open CSV file and save CSV structure content into it
  **/
-int csv_save(CSV *csv, char *filename)
+int csv_save(CSV *csv, const char *filename)
 {
 	FILE *fp;
 	uint32_t row, col;
@@ -282,7 +261,6 @@ int csv_save(CSV *csv, char *filename)
 		}
 		fprintf(fp, "\n");
 	}
-
 	fclose(fp);
 	return 0;
 }

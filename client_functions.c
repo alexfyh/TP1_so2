@@ -8,23 +8,31 @@
 #include "server_definitions.h"
 #include "file_functions.h"
 
-#define LINE_SIZE 130
-//TODO = usar DEFINE en vez de const char 
-const char *EXIT_CMD = "exit";
-const char *LS_CMD = "ls";
-const char *USER_CMD = "user";
-const char *PASSWD_CMD = "passwd";
-const char *FILE_CMD = "file";
-const char *DOWN_CMD = "down";
-#define PRIu32 "u"
+static const char *EXIT_CMD = "exit";
+static const char *LS_CMD = "ls";
+static const char *USER_CMD = "user";
+static const char *PASSWD_CMD = "passwd";
+static const char *FILE_CMD = "file";
+static const char *DOWN_CMD = "down";
 
-uint8_t getArgumentsCount(char *buffer)
+uint8_t getArgumentsCount(char *,uint32_t);
+bool formatRequest(char *, uint32_t, struct Server_Request *, char *);
+void printResponse(struct Server_Response *);
+
+/**
+ * @brief Devuelve la cantidad de argumentos leídos por consola,
+ * separados por espacios en blanco
+ * 
+ * @param buffer 
+ * @return uint8_t 
+ */
+uint8_t getArgumentsCount(char *buffer,uint32_t buffer_size)
 {
-    char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
-    strncpy(temp_buffer, buffer, LINE_SIZE);
+    char *temp_buffer = (char *) calloc(1, buffer_size);
+    snprintf(temp_buffer, buffer_size,"%s", buffer);
     uint8_t count = 0;
     char *token = strtok(temp_buffer, " ");
-    while (token != NULL)
+    while (token)
     {
         count++;
         token = strtok(NULL, " ");
@@ -33,58 +41,60 @@ uint8_t getArgumentsCount(char *buffer)
     return count;
 }
 
-bool formatRequest(char *buffer, struct Server_Request *request, char *image_name)
+bool formatRequest(char *buffer, uint32_t buffer_size,struct Server_Request *request, char *image_name)
 {
-    bool result =false;
-    char *temp_buffer = calloc(LINE_SIZE,sizeof(char));
-    strncpy(temp_buffer, buffer, LINE_SIZE);
+    bool result = false;
+    char *temp_buffer = (char *)calloc(1, buffer_size);
+    snprintf(temp_buffer, buffer_size,"%s",buffer);
     char *token = strtok_r(temp_buffer, " ", &temp_buffer);
-    if(token==NULL){
+    if (!token)
+    {
         return false;
     }
     printf("Primer argumento= %s\n", token);
-    uint8_t cant_argumentos = getArgumentsCount(buffer);
-    if (cant_argumentos == 1 && strlen(token) == strlen(EXIT_CMD) && !strncmp(token, EXIT_CMD, strlen(EXIT_CMD)))
+    uint8_t cant_argumentos = getArgumentsCount(buffer,buffer_size);
+    printf("%d\n",cant_argumentos);
+    if (cant_argumentos == 1 && !strncmp(token, EXIT_CMD, ARGUMENT_SIZE))
     {
         printf("Exit command\n");
         request->requestCode = ServerRequest_LOGOUT;
         result = true;
     }
-    else if (strlen(token) == strlen(USER_CMD) && !strncmp(token, USER_CMD, strlen(USER_CMD)))
+    else if (!strncmp(token, USER_CMD, ARGUMENT_SIZE))
     {
         token = strtok_r(temp_buffer, " ", &temp_buffer);
         printf("Segundo argumento= %s\n", token);
-        if (cant_argumentos == 2 && strlen(token) == strlen(LS_CMD) && !strncmp(token, LS_CMD, strlen(LS_CMD)))
+        if (cant_argumentos == 2 && !strncmp(token, LS_CMD, ARGUMENT_SIZE))
         {
             printf("USER LIST\n");
             request->requestCode = ServerRequest_USER_LIST;
             result = true;
         }
-        else if (cant_argumentos == 3 && strlen(token) == strlen(PASSWD_CMD) && !strncmp(token, PASSWD_CMD, strlen(PASSWD_CMD)))
+        else if (cant_argumentos == 3 && !strncmp(token, PASSWD_CMD, ARGUMENT_SIZE))
         {
             token = strtok_r(temp_buffer, " ", &temp_buffer);
             printf("Tercer argumento= %s\n", token);
             request->requestCode = ServerRequest_PASSWD;
-            strncpy(request->first_argument, token, strnlen(token, ARGUMENT_SIZE));
+            snprintf(request->first_argument, ARGUMENT_SIZE,"%s",token);
             result = true;
         }
     }
-    else if (!strncmp(token, FILE_CMD, strlen(FILE_CMD)))
+    else if (!strncmp(token, FILE_CMD, ARGUMENT_SIZE))
     {
         token = strtok_r(temp_buffer, " ", &temp_buffer);
         printf("Segundo argumento= %s\n", token);
-        if (cant_argumentos == 2 && strlen(token) == strlen(LS_CMD) && !strncmp(token, LS_CMD, strlen(LS_CMD)))
+        if (cant_argumentos == 2 && !strncmp(token, LS_CMD, ARGUMENT_SIZE))
         {
             printf("FILE LIST\n");
             request->requestCode = ServerRequest_FILE_LIST;
             result = true;
         }
-        else if (/*cant arg ??*/ strlen(token) == strlen(DOWN_CMD) && !strncmp(token,DOWN_CMD,strlen(DOWN_CMD)))
+        else if (/*cant arg ??*/ !strncmp(token, DOWN_CMD, ARGUMENT_SIZE))
         {
             printf("FILE DOWNLOAD\n");
             request->requestCode = ServerRequest_FILE_DOWNLOAD;
             token = strtok_r(temp_buffer, " ", &temp_buffer);
-            snprintf(image_name,ARGUMENT_SIZE,"%s",token);
+            snprintf(image_name, ARGUMENT_SIZE, "%s", token);
             result = true;
             /*
             Definir acá qué se debe completar en la solicitud y qué para quedarse en el servidor.
@@ -92,46 +102,46 @@ bool formatRequest(char *buffer, struct Server_Request *request, char *image_nam
             El servidor debe tener la ip del usuario que la pide
             */
         }
-        
     }
     //free(temp_buffer);
     return result;
 }
 
-void printResponse(struct Server_Response* response){
+void printResponse(struct Server_Response *response)
+{
     switch (response->responseCode)
     {
     case ServerResponse_LOGIN_SUCCESS:
-        printf("%s\n","LOGIN SUCCESS");
+        printf("%s\n", "LOGIN SUCCESS");
         break;
     case ServerResponse_LOGIN_FAIL:
-        printf("%s\n","LOGIN FAILED");
+        printf("%s\n", "LOGIN FAILED");
         break;
     case ServerResponse_LOGIN_REJECTED:
-        printf("%s\n","LOGIN REJECTED");
+        printf("%s\n", "LOGIN REJECTED");
         break;
     case ServerResponse_PASSWD_SUCCESS:
-        printf("%s\n","PASSWORD HAS BEEN CHANGED");
+        printf("%s\n", "PASSWORD HAS BEEN CHANGED");
         break;
     case ServerResponse_PASSWD_FAILED:
-        printf("%s\n","PASSWORD COULD NOT BEEN CHANGED");
+        printf("%s\n", "PASSWORD COULD NOT BEEN CHANGED");
         break;
     case ServerResponse_LOGOUT:
-        printf("%s\n","LOGOUT");
-        break; 
+        printf("%s\n", "LOGOUT");
+        break;
     case ServerResponse_CONTINUE:
-        printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
+        printf("%10s  %10s  %20s\n", response->first_argument, response->second_argument, response->third_argument);
         break;
     case ServerResponse_FINISH:
-        printf("%10s  %10s  %20s\n",response->first_argument,response->second_argument,response->third_argument);
+        printf("%10s  %10s  %20s\n", response->first_argument, response->second_argument, response->third_argument);
         break;
     case ServerResponse_FILE_CONTINUE:
-        printf("%32s  %10s  --- ",response->first_argument,response->second_argument);
+        printf("%32s  %10s\n", response->first_argument, response->second_argument);
         print_md5_sum((unsigned char *)response->third_argument);
         printf("\n");
         break;
     default:
-        printf("%s\n","NOT DEFINED");
+        printf("%s\n", "NOT DEFINED");
         break;
     }
     return;

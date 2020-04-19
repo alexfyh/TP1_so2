@@ -23,13 +23,13 @@ void print_md5_sum(unsigned char *md)
     }
 }
 
-char* readable_fs(int64_t size, char *buf) {
+char* readable_fs(int64_t size, char *buf,uint32_t buffer_size) {
     int i = 0;
     const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     while (size > 1024) {
         size /= 1024;
         i++;
     }
-    sprintf(buf, "%.*ld %s", i, size, units[i]);
+    snprintf(buf, buffer_size,"%.*ld %s", i, size, units[i]);
     return buf;
 }

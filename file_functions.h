@@ -34,4 +34,5 @@ typedef struct File_Response
 
 int64_t get_size_by_fd(int);
 void print_md5_sum(unsigned char *);
-char* readable_fs(int64_t, char *);
+char* readable_fs(int64_t, char *,uint32_t);
+

@@ -1,3 +1,5 @@
+//TODO = Ver si es necesario definirlo a fuera del client.c
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -15,7 +17,7 @@ static const char *PASSWD_CMD = "passwd";
 static const char *FILE_CMD = "file";
 static const char *DOWN_CMD = "down";
 
-uint8_t getArgumentsCount(char *,uint32_t);
+uint8_t getArgumentsCount(char *, uint32_t);
 bool formatRequest(char *, uint32_t, struct Server_Request *, char *);
 void printResponse(struct Server_Response *);
 
@@ -23,13 +25,13 @@ void printResponse(struct Server_Response *);
  * @brief Devuelve la cantidad de argumentos leídos por consola,
  * separados por espacios en blanco
  * 
- * @param buffer 
- * @return uint8_t 
+ * @param buffer String a parsear
+ * @return uint8_t Cantidad de argumentos
  */
-uint8_t getArgumentsCount(char *buffer,uint32_t buffer_size)
+uint8_t getArgumentsCount(char *buffer, uint32_t buffer_size)
 {
-    char *temp_buffer = (char *) calloc(1, buffer_size);
-    snprintf(temp_buffer, buffer_size,"%s", buffer);
+    char *temp_buffer = (char *)calloc(1, buffer_size);
+    snprintf(temp_buffer, buffer_size, "%s", buffer);
     uint8_t count = 0;
     char *token = strtok(temp_buffer, " ");
     while (token)
@@ -41,19 +43,31 @@ uint8_t getArgumentsCount(char *buffer,uint32_t buffer_size)
     return count;
 }
 
-bool formatRequest(char *buffer, uint32_t buffer_size,struct Server_Request *request, char *image_name)
+/**
+ * @brief Confirma si lo ingresado corresponde un conjunto de comandos y argumentos
+ * válidos. En caso afirmativo, modifica la estructura pasado por referencia para hacer
+ * la armar la petción.
+ * 
+ * @param buffer Buffer correspondiente a la entrada ingresada por el usuario.
+ * @param buffer_size Tamaño del buffer
+ * @param request Estructura en la que se arma la petición
+ * @param image_name Nombre de la imagen a descargar
+ * @return true Lo ingresado corresponde a una petición válida
+ * @return false 
+ */
+bool formatRequest(char *buffer, uint32_t buffer_size, struct Server_Request *request, char *image_name)
 {
     bool result = false;
     char *temp_buffer = (char *)calloc(1, buffer_size);
-    snprintf(temp_buffer, buffer_size,"%s",buffer);
+    snprintf(temp_buffer, buffer_size, "%s", buffer);
     char *token = strtok_r(temp_buffer, " ", &temp_buffer);
     if (!token)
     {
         return false;
     }
     printf("Primer argumento= %s\n", token);
-    uint8_t cant_argumentos = getArgumentsCount(buffer,buffer_size);
-    printf("%d\n",cant_argumentos);
+    uint8_t cant_argumentos = getArgumentsCount(buffer, buffer_size);
+    printf("%d\n", cant_argumentos);
     if (cant_argumentos == 1 && !strncmp(token, EXIT_CMD, ARGUMENT_SIZE))
     {
         printf("Exit command\n");
@@ -75,7 +89,7 @@ bool formatRequest(char *buffer, uint32_t buffer_size,struct Server_Request *req
             token = strtok_r(temp_buffer, " ", &temp_buffer);
             printf("Tercer argumento= %s\n", token);
             request->requestCode = ServerRequest_PASSWD;
-            snprintf(request->first_argument, ARGUMENT_SIZE,"%s",token);
+            snprintf(request->first_argument, ARGUMENT_SIZE, "%s", token);
             result = true;
         }
     }
@@ -107,6 +121,11 @@ bool formatRequest(char *buffer, uint32_t buffer_size,struct Server_Request *req
     return result;
 }
 
+/**
+ * @brief Varía la cantidad de argumentos a mostrar de acuerdo al tipo de respuesta.
+ * 
+ * @param response Tipo de respuesta a imprimir por pantalla
+ */
 void printResponse(struct Server_Response *response)
 {
     switch (response->responseCode)
@@ -139,6 +158,8 @@ void printResponse(struct Server_Response *response)
         printf("%32s  %10s\n", response->first_argument, response->second_argument);
         print_md5_sum((unsigned char *)response->third_argument);
         printf("\n");
+        break;
+    case ServerResponse_FILE_FINISH:
         break;
     default:
         printf("%s\n", "NOT DEFINED");

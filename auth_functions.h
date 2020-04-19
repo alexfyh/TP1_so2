@@ -45,4 +45,6 @@ typedef struct Auth_Response
 bool isAuthorized(char *, char *);
 bool setUserPassword(char *, char *);
 uint32_t getUsersCount();
-struct UserInfo getUserInfoByRowNumber(uint32_t);
+struct UserInfo *getUserInfoByRowNumber(uint32_t);
+int32_t get_userPosition(char *);
+

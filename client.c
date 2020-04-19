@@ -14,6 +14,7 @@
 #include "state.h"
 
 #define BUFFER_SIZE 120
+#define FILE_BUFFER_SIZE 500
 
 int main(int argc, char *argv[])
 {	
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
 			printf("%s$", user);
 			fgets(buffer, BUFFER_SIZE, stdin);
 			buffer[strcspn(buffer, "\n")] = 0;
-			if (formatRequest(buffer, request, image_name))
+			if (formatRequest(buffer, sizeof(buffer),request, image_name))
 			{
 				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
 				{
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
 					send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
 					int32_t file_newsockfd = acceptConnection(file_sockfd, (struct sockaddr *)&cli_addr);
 
-					char file_buffer[200] = {0};
+					char file_buffer[FILE_BUFFER_SIZE] = {0};
 					//http://codewiki.wikidot.com/c:system-calls:open
 					int32_t downloaded = open("descargado", O_WRONLY | O_CREAT);
 					printf("%d\n", downloaded);

@@ -38,3 +38,37 @@ char* readable_fs(int64_t size, char *buf,uint32_t buffer_size) {
     snprintf(buf, buffer_size,"%.*ld %s", i, size, units[i]);
     return buf;
 }
+
+void printPartitionTable(struct _MBR *MBR)
+{
+	for (uint8_t i = 0; i < 4; i++)
+	{
+		if (MBR->PartTable[i].EndLBA)
+		{
+			printf("Size of Partition  %u  = %u\n", i, MBR->PartTable[i].EndLBA * SECTOR_SIZE);
+			printf("Type of Partition  %u  = %X\n", i, MBR->PartTable[i].PartType);
+			printf("Start of Partition %u  = %u\n", i, MBR->PartTable[i].StartLBA * SECTOR_SIZE);
+			printf("Booteable of Partition  %u  = %u\n", i, MBR->PartTable[i].status);
+			printf("\n");
+		}
+	}
+}
+/**
+ * TODO = del MBR, tomar la partición booteable, devolver su offset y tamaño y usar un file descriptor
+ *  con ese offset y el tamaño de l partición y luego ahcer el checksum!
+ * 
+ */
+
+int8_t getBooteablePartition(struct _MBR *MBR)
+{
+	int8_t index = -1;
+	for (int8_t i = 0; i < 4; i++)
+	{
+		if (MBR->PartTable[i].status == 0x80)
+		{
+			index = i;
+		}
+	}
+	return index;
+}
+

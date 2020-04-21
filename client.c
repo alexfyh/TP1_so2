@@ -12,6 +12,7 @@
 #include "server_definitions.h"
 #include "client_functions.h"
 #include "state.h"
+#include "file_functions.h"
 
 #define BUFFER_SIZE 120
 #define FILE_BUFFER_SIZE 500
@@ -67,12 +68,9 @@ int main(int argc, char *argv[])
 			char *image_name = (char *) calloc(1,ARGUMENT_SIZE);
 			if (formatRequest(buffer, sizeof(buffer), request, image_name))
 			{
-				//Manejarlo por switch por la respuesta?
-				//Si es una petición Downaload si hacr algo antes, sino, que funcione en fucnión de la repsuesta
-
 				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
 				{
-					int32_t fd_download = open(image_name, O_WRONLY | O_CREAT,0666);
+					int32_t fd_download = open(image_name, O_RDWR | O_CREAT,0666);
 					if (fd_download <0)
 					{
 						perror("No se pudo crear el descriptor del archivo de destino");
@@ -82,7 +80,6 @@ int main(int argc, char *argv[])
 					//TODO = modificar la salida para que no termine abruptamente sino CONTINUE
 					int32_t file_sockfd = setUpConnection(&serv_addr, NULL, 1);
 					snprintf(request->first_argument, ARGUMENT_SIZE, "%d", (uint16_t)htons(serv_addr.sin_port));
-					//snprintf(request->second_argument, ARGUMENT_SIZE, "%s", );
 					send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
 					int32_t file_newsockfd = acceptConnection(file_sockfd, (struct sockaddr *)&cli_addr);
 					char file_buffer[FILE_BUFFER_SIZE] = {0};
@@ -96,6 +93,11 @@ int main(int argc, char *argv[])
 						}
 						write(fd_download, file_buffer, (size_t)bytes_recv);
 					} while (bytes_recv > 0);
+					struct _MBR MBR;
+					lseek(fd_download,0,SEEK_SET);
+					read(fd_download, &MBR, sizeof(struct _MBR));
+					printPartitionTable(&MBR);
+
 					close(fd_download);
 					close(file_sockfd);
 				}

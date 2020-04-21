@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
-#include "file_functions.h"
 
 #define SECTOR_SIZE 512
 
@@ -87,11 +86,6 @@ void printPartitionTable(struct _MBR *MBR)
 		}
 	}
 }
-/**
- * TODO = del MBR, tomar la partición booteable, devolver su offset y tamaño y usar un file descriptor
- *  con ese offset y el tamaño de l partición y luego ahcer el checksum!
- * 
- */
 
 int8_t getBooteablePartition(struct _MBR *MBR)
 {

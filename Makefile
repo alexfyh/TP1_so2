@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Werror -Wall -Wextra -Wconversion -std=gnu11 -Wpedantic -I .
+CFLAGS=-Werror -Wall -Wextra -Wconversion -std=gnu11 -Wpedantic -I . -g
 DEPS = auth_definitions.h auth_functions.h state.h transactions.h client_functions.h
 
 %.o: %.c $(DEPS)

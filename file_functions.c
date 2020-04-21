@@ -2,10 +2,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
 #include <stdio.h>
 #include "file_functions.h"
 
+/**
+ * @brief Get the size by fd object
+ * 
+ * @param fd 
+ * @return int64_t 
+ */
 int64_t get_size_by_fd(int fd)
 {
     struct stat statbuf;

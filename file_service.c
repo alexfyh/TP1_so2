@@ -10,14 +10,13 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/sendfile.h>
-
 #include "file_functions.h"
 #include "transactions.h"
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+//#define _BSD_SOURCE
 #define ISO_PATH "isos"
 #define ARGUMENT_SIZE 32
 
@@ -48,7 +47,6 @@ int main(int argc, char *argv[])
     }
     struct File_Request *request = (struct File_Request *)calloc(1, sizeof(struct File_Request));
     struct File_Response *response = (struct File_Response *)calloc(1, sizeof(struct File_Response));
-    ssize_t n;
     DIR *dp;
     struct dirent *ep;
     unsigned char result[MD5_DIGEST_LENGTH];
@@ -60,6 +58,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
+        int64_t n;
         n = read(fd_read, request, sizeof(struct File_Request));
         if (n != sizeof(struct File_Request))
         {
@@ -85,23 +84,24 @@ int main(int argc, char *argv[])
                         char *file_buffer;
                         int32_t file_descript = open(ep->d_name, O_RDONLY);
                         if (file_descript < 0)
-                        { //Si fallo un archivo, que continue
+                        {
                             perror("File descriptor");
                             continue;
                         }
                         int64_t file_size = get_size_by_fd(file_descript);
                         if (file_size < 0)
-                        { //Si fallo un archivo, que continue
+                        {
                             perror("Tamaño no valido");
                             continue;
                         }
                         file_buffer = mmap(0, (uint64_t)file_size, PROT_READ, MAP_SHARED, file_descript, 0);
-                        //TODO casteo implícito porque sino me hubiera salido antes
                         MD5((unsigned char *)file_buffer, (uint64_t)file_size, result);
                         munmap(file_buffer, (uint64_t)file_size);
                         response->code = File_LIST_CONTINUE;
+                        //snprintf(response->first_argument, ARGUMENT_SIZE, "%s",ep->d_name);
                         strncpy(response->first_argument, ep->d_name, ARGUMENT_SIZE);
                         char str_file_size[ARGUMENT_SIZE];
+                        readable_fs(file_size,response->second_argument,ARGUMENT_SIZE);
                         strncpy(response->second_argument, readable_fs(file_size, str_file_size, sizeof(str_file_size)), ARGUMENT_SIZE);
                         memcpy(response->third_argument, result, MD5_DIGEST_LENGTH);
                         write_mod(fd_write, response, sizeof(struct File_Response));
@@ -113,11 +113,15 @@ int main(int argc, char *argv[])
                 break;
             }
             case File_DOWNLOAD:;
-                { //printf("%s\n",request->second_argument);
-                    //uint16_t port = (uint16_t)atoi(request->second_argument);
+                {
                     int32_t file_socket = connectToServer(request->first_argument, request->second_argument);
                     //TODO =  Manejo de errores del descitpr
                     int32_t booteable_fd = open(request->third_argument, O_RDONLY);
+                    if (booteable_fd<0)
+                    {
+                        perror("No se pudo abrir el archivo");
+                        continue;
+                    }
                     struct stat stat_buf;
                     fstat(booteable_fd, &stat_buf);
                     sendfile(file_socket, booteable_fd, NULL, (uint64_t)stat_buf.st_size);

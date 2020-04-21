@@ -61,13 +61,16 @@ void read_mod(int32_t fd, void *buf, size_t n)
 
 int32_t setUpConnection(struct sockaddr_in *serv_addr, char *port, int32_t max_connections)
 {
-	uint16_t puerto;
-	if (!str_to_uint16(port,&puerto))
+
+	uint16_t puerto = 0;
+	if (port != NULL)
 	{
-		perror("Invalid port number");
-		exit(EXIT_FAILURE);
+		if (!str_to_uint16(port, &puerto))
+		{
+			perror("Invalid port number");
+			exit(EXIT_FAILURE);
+		}
 	}
-	
 	int32_t sockfd;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
@@ -111,9 +114,11 @@ int32_t acceptConnection(int32_t sockfd, struct sockaddr *cli_addr)
 	return newsockfd;
 }
 
-int32_t connectToServer(char *address,char *port){
+int32_t connectToServer(char *address, char *port)
+{
 	uint16_t puerto;
-	if(!str_to_uint16(port,&puerto)){
+	if (!str_to_uint16(port, &puerto))
+	{
 		perror("Invalid port number");
 		exit(EXIT_FAILURE);
 	}
@@ -144,13 +149,15 @@ int32_t connectToServer(char *address,char *port){
 	return sockfd;
 }
 
-bool str_to_uint16(const char *str, uint16_t *res) {
-    char *end;
-    errno = 0;
-    long val = strtol(str, &end, 10);
-    if (errno || end == str || *end != '\0' || val < 0 || val >= 0x10000) {
-        return false;
-    }
-    *res = (uint16_t)val;
-    return true;
+bool str_to_uint16(const char *str, uint16_t *res)
+{
+	char *end;
+	errno = 0;
+	long val = strtol(str, &end, 10);
+	if (errno || end == str || *end != '\0' || val < 0 || val >= 0x10000)
+	{
+		return false;
+	}
+	*res = (uint16_t)val;
+	return true;
 }

@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <malloc.h>
+#include <stdlib.h>
 
 #include "server_definitions.h"
 #include "file_functions.h"
@@ -103,18 +104,15 @@ bool formatRequest(char *buffer, uint32_t buffer_size, struct Server_Request *re
             request->requestCode = ServerRequest_FILE_LIST;
             result = true;
         }
-        else if (/*cant arg ??*/ !strncmp(token, DOWN_CMD, ARGUMENT_SIZE))
+        else if (cant_argumentos == 4 && !strncmp(token, DOWN_CMD, ARGUMENT_SIZE))
         {
             printf("FILE DOWNLOAD\n");
             request->requestCode = ServerRequest_FILE_DOWNLOAD;
             token = strtok_r(temp_buffer, " ", &temp_buffer);
+            snprintf(request->second_argument, ARGUMENT_SIZE, "%s", token);
+            token = strtok_r(temp_buffer, " ", &temp_buffer);
             snprintf(image_name, ARGUMENT_SIZE, "%s", token);
             result = true;
-            /*
-            Definir acá qué se debe completar en la solicitud y qué para quedarse en el servidor.
-            Creo que con mandarle a la solicitud el puerto y el nombre basta.
-            El servidor debe tener la ip del usuario que la pide
-            */
         }
     }
     //free(temp_buffer);

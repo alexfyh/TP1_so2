@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 		{
 			printf("%s$", user);
 			buffer[strcspn(fgets(buffer, BUFFER_SIZE, stdin), "\n")] = 0;
-			char image_name[ARGUMENT_SIZE] = "";
+			char *image_name = (char *) calloc(1,ARGUMENT_SIZE);
 			if (formatRequest(buffer, sizeof(buffer), request, image_name))
 			{
 				//Manejarlo por switch por la respuesta?
@@ -72,38 +72,32 @@ int main(int argc, char *argv[])
 
 				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
 				{
-					//TODO = si se produce un fallo, tirar un CONTINUE
+					int32_t fd_download = open(image_name, O_WRONLY | O_CREAT,0666);
+					if (fd_download <0)
+					{
+						perror("No se pudo crear el descriptor del archivo de destino");
+						continue;
+					}
 					struct sockaddr_in serv_addr, cli_addr;
-					//https://stackoverflow.com/questions/1075399/how-to-bind-to-any-available-port
-					// TODO = filtrar por dirección ip antes de bindear, ya sé la ip del server (no aceptar cualqueira)
-					int32_t file_sockfd = setUpConnection(&serv_addr, 0, 1);
+					//TODO = modificar la salida para que no termine abruptamente sino CONTINUE
+					int32_t file_sockfd = setUpConnection(&serv_addr, NULL, 1);
 					snprintf(request->first_argument, ARGUMENT_SIZE, "%d", (uint16_t)htons(serv_addr.sin_port));
-					snprintf(request->second_argument, ARGUMENT_SIZE, "%s", image_name);
+					//snprintf(request->second_argument, ARGUMENT_SIZE, "%s", );
 					send_mod(sockfd, request, sizeof(struct Server_Request), send_flags);
 					int32_t file_newsockfd = acceptConnection(file_sockfd, (struct sockaddr *)&cli_addr);
-
 					char file_buffer[FILE_BUFFER_SIZE] = {0};
-					//http://codewiki.wikidot.com/c:system-calls:open
-					int32_t downloaded = open(image_name, O_WRONLY | O_CREAT);
 					ssize_t bytes_recv;
 					do
 					{
 						bytes_recv = recv(file_newsockfd, file_buffer, sizeof(file_buffer), 0);
-						if (bytes_recv <= 0)
+						if (bytes_recv < 0)
 						{
 							perror("Error en descarga");
 						}
-						write(downloaded, file_buffer, (size_t)bytes_recv);
+						write(fd_download, file_buffer, (size_t)bytes_recv);
 					} while (bytes_recv > 0);
-					close(downloaded);
+					close(fd_download);
 					close(file_sockfd);
-					/*
-
-					//int32_t imagen = open("imagen",O_WRONLY | O_CREAT);
-					recv_mod(file_newsockfd, file_buffer, 100, recv_flags);
-					printf("%s\n", file_buffer);
-					*/
-					printf("Termino la descarga\n");
 				}
 				else
 				{

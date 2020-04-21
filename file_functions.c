@@ -45,9 +45,11 @@ void printPartitionTable(struct _MBR *MBR)
 	{
 		if (MBR->PartTable[i].EndLBA)
 		{
-			printf("Size of Partition  %u  = %u\n", i, MBR->PartTable[i].EndLBA * SECTOR_SIZE);
+            
+            char printable[ARGUMENT_SIZE] = {0};
+			printf("Size of Partition  %u  = %s\n", i, readable_fs((uint64_t)(MBR->PartTable[i].EndLBA * SECTOR_SIZE),printable,ARGUMENT_SIZE));
 			printf("Type of Partition  %u  = %X\n", i, MBR->PartTable[i].PartType);
-			printf("Start of Partition %u  = %u\n", i, MBR->PartTable[i].StartLBA * SECTOR_SIZE);
+			printf("Start of Partition %u  = %s\n", i, readable_fs((uint64_t)(MBR->PartTable[i].StartLBA * SECTOR_SIZE),printable,ARGUMENT_SIZE));
 			printf("Booteable of Partition  %u  = %u\n", i, MBR->PartTable[i].status);
 			printf("\n");
 		}

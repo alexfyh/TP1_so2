@@ -85,6 +85,12 @@ int main(int argc, char *argv[])
 					}
 					fprintf(stdout, "LOGIN STATE\n");
 					recv_mod(newsockfd, server_request, sizeof(struct Server_Request), 0);
+					if (server_request->requestCode==ServerRequest_LOGOUT)
+					{
+						state=EXIT_STATE;
+						continue;
+					}
+					
 					auth_request->code = Auth_LOGIN;
 					snprintf(auth_request->first_argument, ARGUMENT_SIZE, "%s", server_request->first_argument);
 					snprintf(auth_request->second_argument, ARGUMENT_SIZE, "%s", server_request->second_argument);
@@ -184,8 +190,8 @@ int main(int argc, char *argv[])
 					case ServerRequest_LOGOUT:
 					{
 						state = EXIT_STATE;
-						server_response->responseCode = ServerResponse_LOGOUT;
-						send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
+						//server_response->responseCode = ServerResponse_LOGOUT;
+						//send_mod(newsockfd, server_response, sizeof(struct Server_Response), 0);
 						break;
 					}
 					default:

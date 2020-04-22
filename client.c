@@ -15,6 +15,8 @@
 #include "file_functions.h"
 
 #define BUFFER_SIZE 120
+#define MD5_DIGEST_LENGTH 16
+#define SECTOR_SIZE 512
 #define FILE_BUFFER_SIZE 500
 
 int main(int argc, char *argv[])
@@ -65,13 +67,13 @@ int main(int argc, char *argv[])
 		{
 			printf("%s$", user);
 			buffer[strcspn(fgets(buffer, BUFFER_SIZE, stdin), "\n")] = 0;
-			char *image_name = (char *) calloc(1,ARGUMENT_SIZE);
+			char *image_name = (char *)calloc(1, ARGUMENT_SIZE);
 			if (formatRequest(buffer, sizeof(buffer), request, image_name))
 			{
 				if (request->requestCode == ServerRequest_FILE_DOWNLOAD)
 				{
-					int32_t fd_download = open(image_name, O_RDWR | O_CREAT,0666);
-					if (fd_download <0)
+					int32_t fd_download = open(image_name, O_RDWR | O_CREAT, 0666);
+					if (fd_download < 0)
 					{
 						perror("No se pudo crear el descriptor del archivo de destino");
 						continue;
@@ -94,10 +96,20 @@ int main(int argc, char *argv[])
 						write(fd_download, file_buffer, (size_t)bytes_recv);
 					} while (bytes_recv > 0);
 					struct _MBR MBR;
-					lseek(fd_download,0,SEEK_SET);
+					lseek(fd_download, 0, SEEK_SET);
 					read(fd_download, &MBR, sizeof(struct _MBR));
 					printPartitionTable(&MBR);
-
+					int8_t booteable = getBooteablePartition(&MBR);
+					if (booteable != -1)
+					{
+						unsigned char md5_result[MD5_DIGEST_LENGTH] = {0};
+						getMD5Hash(MBR.PartTable[booteable].EndLBA * SECTOR_SIZE, fd_download, MBR.PartTable[booteable].StartLBA * SECTOR_SIZE,md5_result);
+						print_md5_sum(md5_result);
+					}
+					else
+					{
+						perror("No se ha encotrado la particiion booteable");
+					}
 					close(fd_download);
 					close(file_sockfd);
 				}

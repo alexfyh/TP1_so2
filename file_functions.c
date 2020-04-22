@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "file_functions.h"
-
+#include <sys/mman.h>
 /**
  * @brief Get the size by fd object
  * 
@@ -13,30 +13,34 @@
  */
 int64_t get_size_by_fd(int fd)
 {
-    struct stat statbuf;
-    if (fstat(fd, &statbuf) < 0)
-        return -1;
-    return statbuf.st_size;
+	struct stat statbuf;
+	if (fstat(fd, &statbuf) < 0)
+		return -1;
+	return statbuf.st_size;
 }
 
 void print_md5_sum(unsigned char *md)
 {
-    int i;
-    for (i = 0; i < MD5_DIGEST_LENGTH; i++)
-    {
-        printf("%02x", md[i]);
-    }
+	printf("MD5 HASH = ");
+	int i;
+	for (i = 0; i < MD5_DIGEST_LENGTH; i++)
+	{
+		printf("%02x", md[i]);
+	}
+	printf("\n");
 }
 
-char* readable_fs(int64_t size, char *buf,uint32_t buffer_size) {
-    int i = 0;
-    const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-    while (size > 1024) {
-        size /= 1024;
-        i++;
-    }
-    snprintf(buf, buffer_size,"%.*ld %s", i, size, units[i]);
-    return buf;
+char *readable_fs(int64_t size, char *buf, uint32_t buffer_size)
+{
+	int i = 0;
+	const char *units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+	while (size > 1024)
+	{
+		size /= 1024;
+		i++;
+	}
+	snprintf(buf, buffer_size, "%.*ld %s", i, size, units[i]);
+	return buf;
 }
 
 void printPartitionTable(struct _MBR *MBR)
@@ -45,11 +49,10 @@ void printPartitionTable(struct _MBR *MBR)
 	{
 		if (MBR->PartTable[i].EndLBA)
 		{
-            
-            char printable[ARGUMENT_SIZE] = {0};
-			printf("Size of Partition  %u  = %s\n", i, readable_fs((uint64_t)(MBR->PartTable[i].EndLBA * SECTOR_SIZE),printable,ARGUMENT_SIZE));
+			char printable[ARGUMENT_SIZE] = {0};
+			printf("Size of Partition  %u  = %s\n", i, readable_fs((uint64_t)(MBR->PartTable[i].EndLBA * SECTOR_SIZE), printable, ARGUMENT_SIZE));
 			printf("Type of Partition  %u  = %X\n", i, MBR->PartTable[i].PartType);
-			printf("Start of Partition %u  = %s\n", i, readable_fs((uint64_t)(MBR->PartTable[i].StartLBA * SECTOR_SIZE),printable,ARGUMENT_SIZE));
+			printf("Start of Partition %u  = %s\n", i, readable_fs((uint64_t)(MBR->PartTable[i].StartLBA * SECTOR_SIZE), printable, ARGUMENT_SIZE));
 			printf("Booteable of Partition  %u  = %u\n", i, MBR->PartTable[i].status);
 			printf("\n");
 		}
@@ -72,5 +75,16 @@ int8_t getBooteablePartition(struct _MBR *MBR)
 		}
 	}
 	return index;
+}
+
+// TODO = manjear errores!!!
+int8_t getMD5Hash(uint64_t size, int32_t device_fd, uint32_t offset, unsigned char *result)
+{
+	char *file_buffer;
+	file_buffer = mmap(NULL, size, PROT_READ, MAP_SHARED, device_fd, offset);
+	//TODO casteo implícito porque sino me hubiera salido antes
+	MD5((unsigned char *)file_buffer, size, result);
+	munmap(file_buffer, (uint64_t)size);
+	return 1;
 }
 

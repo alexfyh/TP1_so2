@@ -66,29 +66,28 @@ bool formatRequest(char *buffer, uint32_t buffer_size, struct Server_Request *re
     {
         return false;
     }
-    printf("Primer argumento= %s\n", token);
+    //printf("Primer argumento= %s\n", token);
     uint8_t cant_argumentos = getArgumentsCount(buffer, buffer_size);
-    printf("%d\n", cant_argumentos);
     if (cant_argumentos == 1 && !strncmp(token, EXIT_CMD, ARGUMENT_SIZE))
     {
-        printf("Exit command\n");
+        //printf("Exit command\n");
         request->requestCode = ServerRequest_LOGOUT;
         result = true;
     }
     else if (!strncmp(token, USER_CMD, ARGUMENT_SIZE))
     {
         token = strtok_r(temp_buffer, " ", &temp_buffer);
-        printf("Segundo argumento= %s\n", token);
+        //printf("Segundo argumento= %s\n", token);
         if (cant_argumentos == 2 && !strncmp(token, LS_CMD, ARGUMENT_SIZE))
         {
-            printf("USER LIST\n");
+            //printf("USER LIST\n");
             request->requestCode = ServerRequest_USER_LIST;
             result = true;
         }
         else if (cant_argumentos == 3 && !strncmp(token, PASSWD_CMD, ARGUMENT_SIZE))
         {
             token = strtok_r(temp_buffer, " ", &temp_buffer);
-            printf("Tercer argumento= %s\n", token);
+            //printf("Tercer argumento= %s\n", token);
             request->requestCode = ServerRequest_PASSWD;
             snprintf(request->first_argument, ARGUMENT_SIZE, "%s", token);
             result = true;
@@ -97,16 +96,16 @@ bool formatRequest(char *buffer, uint32_t buffer_size, struct Server_Request *re
     else if (!strncmp(token, FILE_CMD, ARGUMENT_SIZE))
     {
         token = strtok_r(temp_buffer, " ", &temp_buffer);
-        printf("Segundo argumento= %s\n", token);
+        //printf("Segundo argumento= %s\n", token);
         if (cant_argumentos == 2 && !strncmp(token, LS_CMD, ARGUMENT_SIZE))
         {
-            printf("FILE LIST\n");
+            //printf("FILE LIST\n");
             request->requestCode = ServerRequest_FILE_LIST;
             result = true;
         }
         else if (cant_argumentos == 4 && !strncmp(token, DOWN_CMD, ARGUMENT_SIZE))
         {
-            printf("FILE DOWNLOAD\n");
+            //printf("FILE DOWNLOAD\n");
             request->requestCode = ServerRequest_FILE_DOWNLOAD;
             token = strtok_r(temp_buffer, " ", &temp_buffer);
             snprintf(request->second_argument, ARGUMENT_SIZE, "%s", token);
@@ -155,7 +154,6 @@ void printResponse(struct Server_Response *response)
     case ServerResponse_FILE_CONTINUE:
         printf("%32s  %10s\n", response->first_argument, response->second_argument);
         print_md5_sum((unsigned char *)response->third_argument);
-        printf("\n");
         break;
     case ServerResponse_FILE_FINISH:
         break;

@@ -15,7 +15,7 @@ auth_service: auth_service.o auth_functions.o transactions.o
 	$(CC) -o auth_service auth_service.o auth_functions.o transactions.o
 
 client: client.o transactions.o client_functions.o
-	$(CC) -o client client.o transactions.o client_functions.o file_functions.o
+	$(CC) -o client client.o transactions.o client_functions.o file_functions.o -lcrypto -lssl
 
 file_service: file_service.o file_functions.o file_functions.o transactions.o
 	$(CC) -o file_service file_service.o file_functions.o transactions.o -lcrypto -lssl

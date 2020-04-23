@@ -1,4 +1,3 @@
-//  https://www.gnu.org/software/libc/manual/html_node/Simple-Directory-Lister.html
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -20,14 +19,16 @@
 #define ISO_PATH "isos"
 #define ARGUMENT_SIZE 32
 
-//  COMPILAR CON:   gcc -o file_functions file_functions.c -D_DEFAULT_SOURCE
-//              :   gcc -o file_functions file_functions.c -D_BSD_SOURCE
-//  Instalacion de opensll : apt-get install libssl-dev
-// compilar con -lcrypto -lssl
-//  Con directivas de compilador (IFDEF) borrar el main
-// https://stackoverflow.com/questions/3395690/md5sum-of-file-in-linux-c
-//  https://ftp1.digi.com/support/documentation/0220055_d.pdf
-//  https://rosettacode.org/wiki/MD5
+/**
+ * @brief Ejecutable que se encarga de todos los servicios de tranferencia de archivos,
+ * así como devolver las imágenes disponible.
+ * 
+ * Es  necesario que las imágenes se encuentren un directorio llamado isos dentro del 
+ * mismo working space desde donde se ejecuta este servicio.
+ * 
+ * Es requerido para su inicio los descriptores de archivos de los pipes para
+ * la comunicación con otro proceso. 
+ */
 
 int main(int argc, char *argv[])
 {

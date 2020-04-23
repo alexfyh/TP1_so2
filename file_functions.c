@@ -6,10 +6,10 @@
 #include "file_functions.h"
 #include <sys/mman.h>
 /**
- * @brief Get the size by fd object
+ * @brief Devuelve el tamaño del archivo del file descriptor
  * 
- * @param fd 
- * @return int64_t 
+ * @param fd Descriptor de archivo
+ * @return int64_t Tamaño del archivo
  */
 int64_t get_size_by_fd(int fd)
 {
@@ -19,6 +19,11 @@ int64_t get_size_by_fd(int fd)
 	return statbuf.st_size;
 }
 
+/**
+ * @brief Imprime en pantalla el Hash MD5 en hexa
+ * 
+ * @param md Arreglo de char donde está almacenado el hash
+ */
 void print_md5_sum(unsigned char *md)
 {
 	printf("MD5 HASH = ");
@@ -30,6 +35,14 @@ void print_md5_sum(unsigned char *md)
 	printf("\n");
 }
 
+/**
+ * @brief Devuelve en formato human readable el tamaño en bytes pasado.
+ * 
+ * @param size Tamaño en bytes
+ * @param buf Buffer donde escribir el resultado
+ * @param buffer_size Tamaño del buffer pasado
+ * @return char* String en formato human readable
+ */
 char *readable_fs(int64_t size, char *buf, uint32_t buffer_size)
 {
 	int i = 0;
@@ -43,6 +56,12 @@ char *readable_fs(int64_t size, char *buf, uint32_t buffer_size)
 	return buf;
 }
 
+/**
+ * @brief Imprimer en pantalla el tamaño , el Tipo, inicio de cada partición primaria
+ * de la estructura Master Boot Record pasada.
+ * 
+ * @param MBR estructura MBR.
+ */
 void printPartitionTable(struct _MBR *MBR)
 {
 	for (uint8_t i = 0; i < 4; i++)
@@ -58,12 +77,14 @@ void printPartitionTable(struct _MBR *MBR)
 		}
 	}
 }
-/**
- * TODO = del MBR, tomar la partición booteable, devolver su offset y tamaño y usar un file descriptor
- *  con ese offset y el tamaño de l partición y luego ahcer el checksum!
- * 
- */
 
+/**
+ * @brief Obtiene el índice de la partición booteable ubicado dentro
+ * de la tabla de particiones del MBR
+ * 
+ * @param MBR Master Boot Record 
+ * @return int8_t índice de la partición booteable. -1 en caso de error.
+ */
 int8_t getBooteablePartition(struct _MBR *MBR)
 {
 	int8_t index = -1;
@@ -77,12 +98,23 @@ int8_t getBooteablePartition(struct _MBR *MBR)
 	return index;
 }
 
-// TODO = manjear errores!!!
+/**
+ * @brief Guarda en el result el resultado del hash, a partir del descriptor de archivo device_fd
+ * 
+ * @param size Tamaño del archivo o bloque aplicar la función hash
+ * @param device_fd Descriptor de archivo al archivo sobre el cual hacer hash.
+ * @param offset Desde qué byte leer el archivo
+ * @param result Buffer donde se guarda el Hash
+ * @return int8_t Resultado del hash, -1 si se produjo error.
+ */
 int8_t getMD5Hash(uint64_t size, int32_t device_fd, uint32_t offset, unsigned char *result)
 {
 	char *file_buffer;
 	file_buffer = mmap(NULL, size, PROT_READ, MAP_SHARED, device_fd, offset);
-	//TODO casteo implícito porque sino me hubiera salido antes
+	if (file_buffer==MAP_FAILED)
+	{
+		return -1;
+	}
 	MD5((unsigned char *)file_buffer, size, result);
 	munmap(file_buffer, (uint64_t)size);
 	return 1;

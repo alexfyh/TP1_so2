@@ -10,7 +10,16 @@
 #include "auth_functions.h"
 #include "transactions.h"
 
-//static void exit_handler(void);
+/**
+ * @brief Ejecutable que se encarga de recibir peticiones de autorizacion, así como también brindar
+ * información de los usuarios y cambio de contraseña 
+ * 
+ * La base de datos se debe llamar user.csv y debe ser el mismo directorio que el working space
+ * del ejecutable auth_service.
+ * 
+ * Es requerido para su inicio que se pasen los descriptores de archivos de los pipes para
+ * la comunicación con otro proceso.
+ */
 
 int main(int argc, char *argv[])
 {

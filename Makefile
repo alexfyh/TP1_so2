@@ -20,8 +20,6 @@ client: client.o transactions.o client_functions.o
 file_service: file_service.o file_functions.o file_functions.o transactions.o
 	$(CC) -o file_service file_service.o file_functions.o transactions.o -lcrypto -lssl
 
-#csv_handler: csv_handler.o
-#	$(CC) -o csv_handler csv_handler.o
 
 clean:
 	rm -f auth_service client server csv_handler file_service *.o

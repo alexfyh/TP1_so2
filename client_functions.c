@@ -27,6 +27,7 @@ void printResponse(struct Server_Response *);
  * separados por espacios en blanco
  * 
  * @param buffer String a parsear
+ * @param buffer_size Tamaño del buffer de entrada
  * @return uint8_t Cantidad de argumentos
  */
 uint8_t getArgumentsCount(char *buffer, uint32_t buffer_size)
@@ -46,8 +47,8 @@ uint8_t getArgumentsCount(char *buffer, uint32_t buffer_size)
 
 /**
  * @brief Confirma si lo ingresado corresponde un conjunto de comandos y argumentos
- * válidos. En caso afirmativo, modifica la estructura pasado por referencia para hacer
- * la armar la petción.
+ * válidos. En caso afirmativo, modifica la estructura pasado por referencia para
+ *  armar la petción.
  * 
  * @param buffer Buffer correspondiente a la entrada ingresada por el usuario.
  * @param buffer_size Tamaño del buffer

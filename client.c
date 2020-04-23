@@ -20,31 +20,19 @@
 #define SECTOR_SIZE 512
 #define FILE_BUFFER_SIZE 500
 
-//Necesario definirlo como globales?
-// TODO = ver si es necesario que el servidor me responda el logout
 STATE state = LOGIN_STATE;
 int32_t sockfd;
 struct Server_Request *request;
 struct Server_Response *response;
-//el logout se puede hacer incluso en la etapa de login}
-//Entonces en el exec, apenas le llegue la señal SGINT, llamar a la función despedida. Y salir.
-// CRear de última una neuva structura, diferente a la usadae par envios...esto si las estructuras
-// crean después de la conexión, Porque si le mando exit en una estrcutura no alocada se puede romper
-//Ver, registrar la señal sólo después de que se haya iniciado el socket, sino no tiene sentido enviar
-// al fd del socket, o asertar sobre si el fd es mayor a 0
-void handle_sigint(int sig)
-{
-	if (sig == SIGINT)
-	{
-		request->requestCode = ServerRequest_LOGOUT;
-		send_mod(sockfd, request, sizeof(struct Server_Request), 0);
-		close(sockfd);
-		free(request);
-		free(response);
-		exit(EXIT_SUCCESS);
-	}
-}
 
+void handle_sigint(int);
+
+/**
+ * @brief Cliente para la conexión con el servidor.
+ * 
+ * Primer argumento = dirección ip del servidor
+ * Segundo argumenti = número de puerto del servidor 
+ */
 int main(int argc, char *argv[])
 {
 	if (argc < 3)
@@ -175,6 +163,20 @@ int main(int argc, char *argv[])
 	}
 }
 
-//https://gist.github.com/aspyct/3462238
-//https://www.geeksforgeeks.org/signals-c-language/
-//http://sgeos.github.io/unix/c/signals/2016/02/24/passing-values-to-c-signal-handlers.html
+/**
+ * @brief Definición de la interrupción por CTRL-C
+ * 
+ * @param sig Señal de interrupción que se produce
+ */
+void handle_sigint(int sig)
+{
+	if (sig == SIGINT)
+	{
+		request->requestCode = ServerRequest_LOGOUT;
+		send_mod(sockfd, request, sizeof(struct Server_Request), 0);
+		close(sockfd);
+		free(request);
+		free(response);
+		exit(EXIT_SUCCESS);
+	}
+}
